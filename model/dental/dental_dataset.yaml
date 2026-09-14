@@ -1,7 +1,7 @@
 # YOLOv8 Dataset Configuration for Dental Panoramic Radiographs
 # Formatted for the DENTEX Challenge Dataset (Pathologies & FDI Tooth Numbering)
 
-path: ../../dataset/dental_xray
+path: dataset/dental_xray
 train: images/train
 val: images/val
 test: images/test

@@ -1,7 +1,7 @@
 # YOLOv8 Dataset Configuration for Musculoskeletal Bone Fracture Detection
 # Compatible with FracAtlas and GRAZPEDWRI-DX datasets
 
-path: ../../dataset/bone_xray
+path: dataset/bone_xray
 train: images/train
 val: images/val
 test: images/test
