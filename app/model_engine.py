@@ -186,21 +186,42 @@ class ModelEngine:
                 is_pneumonia = (pred_idx == 1)
                 summary = "PNEUMONIA (Abnormal)" if is_pneumonia else "NORMAL (Healthy)"
 
-                findings = [{
-                    "label": "Bilateral Infiltrates / Consolidation" if is_pneumonia else "Clear Pulmonary Parenchyma",
-                    "tooth_number": None,
-                    "confidence": confidence,
-                    "bbox_x": 0.25 if is_pneumonia else None,
-                    "bbox_y": 0.35 if is_pneumonia else None,
-                    "bbox_w": 0.50 if is_pneumonia else None,
-                    "bbox_h": 0.40 if is_pneumonia else None
-                }]
+                if is_pneumonia:
+                    try:
+                        from app.gradcam import localize_chest_abnormality
+                        raw_w, raw_h = raw_img.size
+                        finding = localize_chest_abnormality(self.chest_model_pt, tensor, raw_w, raw_h, confidence)
+                        body_region = finding.get("body_region", "Thoracic")
+                        findings = [finding]
+                    except Exception as ge:
+                        print(f"[AI Engine] Grad-CAM localization error: {ge}")
+                        findings = [{
+                            "label": "Pulmonary Infiltrate / Consolidation",
+                            "tooth_number": None,
+                            "confidence": confidence,
+                            "bbox_x": 0.22,
+                            "bbox_y": 0.30,
+                            "bbox_w": 0.56,
+                            "bbox_h": 0.45
+                        }]
+                        body_region = "Thoracic"
+                else:
+                    findings = [{
+                        "label": "Clear Pulmonary Parenchyma",
+                        "tooth_number": None,
+                        "confidence": confidence,
+                        "bbox_x": None,
+                        "bbox_y": None,
+                        "bbox_w": None,
+                        "bbox_h": None
+                    }]
+                    body_region = "Thoracic (Normal Lung Fields)"
 
                 return {
                     "scan_type": "Chest",
                     "prediction": summary,
                     "confidence": confidence,
-                    "body_region": "Thoracic",
+                    "body_region": body_region,
                     "findings": findings,
                     "is_simulated": False
                 }

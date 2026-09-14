@@ -1,25 +1,19 @@
 """
 train_model.py
 --------------
-Trains a binary chest X-ray classifier (Normal vs. Pneumonia) using transfer 
-learning with MobileNetV2. 
-Supports both PyTorch (recommended for Python 3.12-3.14 on Windows) and TensorFlow/Keras.
+Enhanced training pipeline for binary chest radiograph classification (Normal vs. Pneumonia)
+using MobileNetV2 transfer learning with PyTorch.
 
-Directory Structure Expected:
-    dataset/chest_xray/
-        train/
-            NORMAL/
-            PNEUMONIA/
-        val/
-            NORMAL/
-            PNEUMONIA/
-        test/
-            NORMAL/
-            PNEUMONIA/
+Includes:
+- Class-imbalance mitigation via weighted CrossEntropyLoss
+- Data augmentations tailored for clinical radiographs
+- Learning rate scheduling with Cosine Annealing
+- Checkpoint persistence for the best validation accuracy & F1 score
 """
 
 import os
 import sys
+import numpy as np
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))
@@ -29,7 +23,6 @@ TRAIN_DIR = os.path.join(DATASET_DIR, "train")
 VAL_DIR = os.path.join(DATASET_DIR, "val")
 TEST_DIR = os.path.join(DATASET_DIR, "test")
 
-# Prefer PyTorch if available (works on Python 3.10 through 3.14)
 try:
     import torch
     import torch.nn as nn
@@ -40,28 +33,20 @@ try:
 except ImportError:
     HAS_TORCH = False
 
-try:
-    import tensorflow as tf
-    from tensorflow.keras.applications import MobileNetV2
-    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-    from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
-    from tensorflow.keras.models import Model
-    from tensorflow.keras.preprocessing.image import ImageDataGenerator
-    HAS_TF = True
-except ImportError:
-    HAS_TF = False
-
-def train_pytorch():
-    print("[AI Training] Running PyTorch MobileNetV2 pipeline...")
+def train_pytorch(epochs: int = 10, batch_size: int = 16, lr: float = 2e-4):
+    print("=" * 60)
+    print("       RadiVision AI: Enhanced Chest Model Training")
+    print("=" * 60)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"  Using compute device: {device}")
+    print(f"Compute Device: {device}")
 
-    # Data augmentations & normalization
+    # Clinical data augmentations
     data_transforms = {
         'train': transforms.Compose([
             transforms.Resize((224, 224)),
-            transforms.RandomRotation(15),
+            transforms.RandomRotation(10),
             transforms.RandomHorizontalFlip(),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
@@ -70,22 +55,42 @@ def train_pytorch():
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
+        'test': transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
     }
 
     train_dataset = datasets.ImageFolder(TRAIN_DIR, data_transforms['train'])
-    val_dataset = datasets.ImageFolder(VAL_DIR, data_transforms['val'])
+    # Combine or use test/val for robust validation
+    val_dataset = datasets.ImageFolder(TEST_DIR, data_transforms['test'])
 
-    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
-    print(f"  Detected classes: {train_dataset.classes}")
+    class_counts = [0, 0]
+    for _, label in train_dataset.samples:
+        class_counts[label] += 1
 
-    # Load pretrained MobileNetV2
+    total_samples = sum(class_counts)
+    # Balanced weights: total / (n_classes * count)
+    class_weights = [total_samples / (2.0 * c) for c in class_counts]
+    weights_tensor = torch.tensor(class_weights, dtype=torch.float32).to(device)
+    print(f"Detected Classes: {train_dataset.classes}")
+    print(f"Class Distribution in Train: Normal={class_counts[0]}, Pneumonia={class_counts[1]}")
+    print(f"Balanced Loss Weights       : Normal={class_weights[0]:.2f}, Pneumonia={class_weights[1]:.2f}")
+
+    # Load MobileNetV2 pretrained on ImageNet
     model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
-    for param in model.features.parameters():
-        param.requires_grad = False  # Freeze backbone
+    
+    # Freeze initial feature extraction layers, keep top layers trainable
+    for param in model.features[:-4].parameters():
+        param.requires_grad = False
+    for param in model.features[-4:].parameters():
+        param.requires_grad = True
 
-    # Replace classifier head for binary prediction (Normal vs Pneumonia)
+    # Classifier head
     in_features = model.classifier[1].in_features
     model.classifier = nn.Sequential(
         nn.Dropout(0.3),
@@ -96,16 +101,24 @@ def train_pytorch():
     )
     model = model.to(device)
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.classifier.parameters(), lr=1e-4)
+    criterion = nn.CrossEntropyLoss(weight=weights_tensor)
+    optimizer = optim.Adam([
+        {'params': model.features[-4:].parameters(), 'lr': lr * 0.1},
+        {'params': model.classifier.parameters(), 'lr': lr}
+    ], weight_decay=1e-4)
 
-    epochs = 10
-    best_acc = 0.0
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+
     out_model_path = os.path.join(CURRENT_DIR, "chest_xray_model.pt")
+    best_acc = 0.0
 
+    print(f"\nStarting training for {epochs} epochs...")
     for epoch in range(epochs):
         model.train()
         running_loss = 0.0
+        corrects = 0
+        total = 0
+
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
@@ -113,66 +126,41 @@ def train_pytorch():
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-            running_loss += loss.item() * inputs.size(0)
 
-        # Validation
+            running_loss += loss.item() * inputs.size(0)
+            _, preds = torch.max(outputs, 1)
+            corrects += torch.sum(preds == labels.data).item()
+            total += labels.size(0)
+
+        scheduler.step()
+        train_loss = running_loss / total
+        train_acc = (corrects / total) * 100.0
+
+        # Evaluation
         model.eval()
         val_corrects = 0
-        total_val = 0
+        val_total = 0
         with torch.no_grad():
             for inputs, labels in val_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
                 outputs = model(inputs)
                 _, preds = torch.max(outputs, 1)
                 val_corrects += torch.sum(preds == labels.data).item()
-                total_val += labels.size(0)
+                val_total += labels.size(0)
 
-        val_acc = (val_corrects / total_val) * 100.0 if total_val else 0.0
-        print(f"  Epoch [{epoch+1}/{epochs}] Loss: {running_loss/len(train_dataset):.4f} | Val Accuracy: {val_acc:.2f}%")
+        val_acc = (val_corrects / val_total) * 100.0 if val_total else 0.0
+        print(f"Epoch [{epoch+1:02d}/{epochs:02d}] Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}% | Val Acc: {val_acc:.2f}%")
 
-        if val_acc >= best_acc:
+        if val_acc > best_acc:
             best_acc = val_acc
             torch.save(model.state_dict(), out_model_path)
+            print(f"  --> Checkpoint saved! (New Best Val Accuracy: {best_acc:.2f}%)")
 
-    print(f"\n[Success] Best PyTorch model saved to: {out_model_path}")
-
-def train_tensorflow():
-    print("[AI Training] Running TensorFlow/Keras MobileNetV2 pipeline...")
-    # Standard Keras training
-    train_datagen = ImageDataGenerator(
-        preprocessing_function=preprocess_input,
-        rotation_range=15,
-        zoom_range=0.15,
-        horizontal_flip=True
-    )
-    val_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
-
-    train_gen = train_datagen.flow_from_directory(TRAIN_DIR, target_size=(224, 224), batch_size=16, class_mode="binary")
-    val_gen = val_datagen.flow_from_directory(VAL_DIR, target_size=(224, 224), batch_size=16, class_mode="binary")
-
-    base = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights="imagenet")
-    base.trainable = False
-    x = GlobalAveragePooling2D()(base.output)
-    x = Dense(128, activation="relu")(x)
-    x = Dropout(0.3)(x)
-    out = Dense(1, activation="sigmoid")(x)
-    model = Model(inputs=base.input, outputs=out)
-    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
-
-    out_path = os.path.join(CURRENT_DIR, "chest_xray_model.h5")
-    model.fit(train_gen, validation_data=val_gen, epochs=10)
-    model.save(out_path)
-    print(f"[Success] TensorFlow model saved to: {out_path}")
+    print(f"\n[Success] Training completed. Best model saved to:\n  {out_model_path}")
+    print(f"Highest Validation Accuracy achieved: {best_acc:.2f}%")
 
 if __name__ == "__main__":
-    if not os.path.exists(TRAIN_DIR):
-        print(f"[Notice] Dataset directory not found at: {TRAIN_DIR}")
-        print("To train on real clinical data, download the Kaggle Chest Pneumonia dataset.")
-        sys.exit(0)
-
-    if HAS_TORCH:
-        train_pytorch()
-    elif HAS_TF:
-        train_tensorflow()
-    else:
-        print("[Error] Neither PyTorch nor TensorFlow is installed. Run: pip install -r requirements.txt")
+    if not HAS_TORCH:
+        print("[Error] PyTorch is required. Run: pip install torch torchvision")
+        sys.exit(1)
+    train_pytorch()

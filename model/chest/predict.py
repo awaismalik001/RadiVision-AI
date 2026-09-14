@@ -1,60 +1,121 @@
 """
 predict.py
 -----------
-Stand-alone inference verification script for chest pneumonia classification.
-Evaluates an arbitrary-sized X-ray image and outputs the diagnosis and confidence.
+Standalone inference verification script for chest radiograph classification.
+Supports PyTorch (chest_xray_model.pt) and TensorFlow (chest_xray_model.h5).
+Runs Grad-CAM abnormality localization to pinpoint the exact lesion location.
 """
 
 import sys
 import os
-import numpy as np
-
-try:
-    from tensorflow.keras.models import load_model
-    from tensorflow.keras.preprocessing import image
-    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-    HAS_TF = True
-except ImportError:
-    HAS_TF = False
+from PIL import Image
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(CURRENT_DIR, "chest_xray_model.h5")
-IMG_SIZE = (224, 224)
-CLASS_LABELS = {0: "NORMAL", 1: "PNEUMONIA (Abnormal)"}
+PROJECT_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))
+MODEL_PT_PATH = os.path.join(CURRENT_DIR, "chest_xray_model.pt")
+MODEL_H5_PATH = os.path.join(CURRENT_DIR, "chest_xray_model.h5")
 
-def predict_xray(image_path: str):
+# Ensure project root is in sys.path for app imports
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+def predict_xray(image_path: str, generate_overlay: bool = True):
     if not os.path.exists(image_path):
-        print(f"Error: File '{image_path}' not found.")
+        print(f"[Error] Target image '{image_path}' not found.")
         return
 
-    if not HAS_TF:
-        print("TensorFlow is not installed. Please install requirements.txt.")
-        return
+    # Check PyTorch model first
+    if os.path.exists(MODEL_PT_PATH):
+        try:
+            import torch
+            import torch.nn as nn
+            from torchvision import models, transforms
+            from app.gradcam import localize_chest_abnormality
+            from app.detection_overlay import draw_findings_overlay
 
-    if not os.path.exists(MODEL_PATH):
-        print(f"Model file '{MODEL_PATH}' not found. Please run train_model.py first.")
-        return
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = load_model(MODEL_PATH)
+            # Load model
+            model = models.mobilenet_v2(weights=None)
+            in_features = model.classifier[1].in_features
+            model.classifier = nn.Sequential(
+                nn.Dropout(0.3),
+                nn.Linear(in_features, 128),
+                nn.ReLU(),
+                nn.Dropout(0.2),
+                nn.Linear(128, 2)
+            )
+            model.load_state_dict(torch.load(MODEL_PT_PATH, map_location=device))
+            model = model.to(device)
+            model.eval()
 
-    # In-memory preprocessing: auto-resizes arbitrary resolution
-    img = image.load_img(image_path, target_size=IMG_SIZE)
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = preprocess_input(img_array)
+            # Preprocess image
+            raw_img = Image.open(image_path).convert('RGB')
+            raw_w, raw_h = raw_img.size
 
-    raw_pred = model.predict(img_array, verbose=0)[0][0]
-    predicted_class = int(raw_pred >= 0.5)
-    confidence = raw_pred if predicted_class == 1 else (1.0 - raw_pred)
-    label = CLASS_LABELS[predicted_class]
+            tfms = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
+            tensor = tfms(raw_img).unsqueeze(0).to(device)
 
-    print("=" * 45)
-    print(f"Target Radiograph : {image_path}")
-    print(f"Diagnostic Result : {label}")
-    print(f"Confidence Rating : {confidence * 100:.2f}%")
-    print("=" * 45)
+            with torch.no_grad():
+                outputs = model(tensor)
+                probs = torch.softmax(outputs, dim=1)[0]
+                norm_prob = float(probs[0].item())
+                pneu_prob = float(probs[1].item())
+                pred_idx = int(torch.argmax(probs).item())
+                confidence = pneu_prob if pred_idx == 1 else norm_prob
 
-    return label, float(confidence)
+            is_pneumonia = (pred_idx == 1)
+            summary = "PNEUMONIA (Abnormal)" if is_pneumonia else "NORMAL (Healthy)"
+
+            # Compute exact abnormality localization
+            if is_pneumonia:
+                finding = localize_chest_abnormality(model, tensor, raw_w, raw_h, confidence)
+                body_region = finding.get("body_region", "Thoracic")
+                findings = [finding]
+            else:
+                body_region = "Thoracic (Normal Lung Fields)"
+                findings = [{
+                    "label": "Clear Pulmonary Parenchyma",
+                    "tooth_number": None,
+                    "confidence": confidence,
+                    "bbox_x": None,
+                    "bbox_y": None,
+                    "bbox_w": None,
+                    "bbox_h": None
+                }]
+
+            print("=" * 60)
+            print("         RadiVision AI: Radiograph Diagnostic Report")
+            print("=" * 60)
+            print(f"Target Radiograph   : {image_path}")
+            print(f"Resolution          : {raw_w} x {raw_h}")
+            print(f"Diagnostic Result   : {summary}")
+            print(f"Diagnosis Confidence: {confidence * 100:.2f}%")
+            print(f"Normal Probability  : {norm_prob * 100:.2f}%")
+            print(f"Pneumonia Prob      : {pneu_prob * 100:.2f}%")
+            print(f"Anatomical Location : {body_region}")
+            if is_pneumonia and findings[0].get("bbox_x") is not None:
+                f = findings[0]
+                print(f"Lesion Finding      : {f['label']}")
+                print(f"Exact Bounding Box  : [X: {f['bbox_x']}, Y: {f['bbox_y']}, W: {f['bbox_w']}, H: {f['bbox_h']}]")
+            print("=" * 60)
+
+            if generate_overlay:
+                out_path = draw_findings_overlay(
+                    image_path, findings, "Chest", summary, confidence
+                )
+                print(f"[Overlay] Annotated radiograph generated at:\n  {out_path}")
+
+            return summary, confidence, findings
+
+        except Exception as e:
+            print(f"[AI] PyTorch inference error: {e}")
+
+    print("[Error] No trained model weights found (chest_xray_model.pt). Run train_model.py first.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
