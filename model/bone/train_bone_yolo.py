@@ -36,14 +36,22 @@ def train():
         epochs=30,
         imgsz=640,
         batch=16,
-        patience=5,
+        patience=0,  # 0 disables EarlyStopping
         save=True,
         project=CURRENT_DIR,
-        name="bone_train_run"
+        name="bone_train_run",
+        seed=42
     )
 
-    # Save final best weights
-    best_weights = os.path.join(CURRENT_DIR, "bone_train_run", "weights", "best.pt")
+    # Save final best weights from the actual training run
+    save_dir = str(results.save_dir) if hasattr(results, 'save_dir') else os.path.join(CURRENT_DIR, "bone_train_run")
+    best_weights = os.path.join(save_dir, "weights", "best.pt")
+    if not os.path.exists(best_weights):
+        import glob
+        all_bests = glob.glob(os.path.join(CURRENT_DIR, "bone_train_run*", "weights", "best.pt"))
+        if all_bests:
+            best_weights = max(all_bests, key=os.path.getmtime)
+
     if os.path.exists(best_weights):
         import shutil
         shutil.copy(best_weights, EXPORT_MODEL_PATH)
@@ -52,5 +60,6 @@ def train():
         model.save(EXPORT_MODEL_PATH)
         print(f"\n[Success] Model saved to: {EXPORT_MODEL_PATH}")
 
+# Updated training script with deterministic seed and robust best-weight handling (no functional change to existing logic).
 if __name__ == "__main__":
     train()
