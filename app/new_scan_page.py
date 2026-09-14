@@ -478,11 +478,11 @@ class NewScanPage(QWidget):
         if not pixmap.isNull():
             self.image_display.set_scalable_pixmap(pixmap)
 
-        # Automated modality triage
-        pred_modality, conf = ai_engine.detect_modality(file_path)
-        self.modality_status_lbl.setText(f"Auto-Detected: {pred_modality} ({conf*100:.1f}%)")
-        self.modality_override.setCurrentText(pred_modality)
-        self.run_btn.setEnabled(True)
+        # Manual modality selection – user must choose from dropdown
+        self.modality_status_lbl.setText("Please select modality manually.")
+        # Do not change the dropdown automatically; keep current selection.
+        self.run_btn.setEnabled(True)  # Enable run button after image load
+
 
     def execute_inference(self):
         """Executes deep learning inference asynchronously."""
