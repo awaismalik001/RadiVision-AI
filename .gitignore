@@ -1,0 +1,127 @@
+# ==============================================================================
+# RadiVision AI (.gitignore)
+# Comprehensive exclusion of sensitive clinical data, credentials, databases,
+# large model checkpoints, generated medical reports, and environment artifacts.
+# ==============================================================================
+
+# ----------------- 0. Academic Documentation & Personal Reports ----------
+# Exclude student project documentation containing personal and institutional info
+Project_Documentation_Report.md
+*.docx
+*.pptx
+
+# ----------------- 1. Sensitive Databases & User Records -----------------
+# Exclude SQLite databases storing patient health information, password hashes,
+# session records, and institutional audit logs.
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+!database/.gitkeep
+
+# ----------------- 2. Clinical Diagnostic Reports & Overlays -------------
+# Exclude generated clinical PDF reports, text summaries, and annotated scans
+# containing patient diagnoses and visual finding markers.
+reports/*.pdf
+reports/*.txt
+reports/*.csv
+reports/annotated_*.*
+!reports/.gitkeep
+
+# ----------------- 3. Sensitive Patient Data & Raw Datasets --------------
+# Exclude raw or pre-processed patient radiographs and medical imaging formats.
+dataset/raw/
+dataset/processed/
+dataset/downloaded/
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+
+# ----------------- 4. Deep Learning Model Checkpoints & Weights ----------
+# Exclude large binary model weight files (YOLO, PyTorch, TorchVision).
+*.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+*.weights
+*.bin
+*.h5
+*.ckpt
+runs/
+checkpoints/
+weights/
+
+# ----------------- 5. Environment Secrets, API Keys & Credentials --------
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+*.p12
+secrets.json
+credentials.json
+
+# ----------------- 6. Python Runtime & Bytecode Cache --------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ----------------- 7. Virtual Environments -------------------------------
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# ----------------- 8. Testing & Code Coverage Artifacts ------------------
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+htmlcov/
+
+# ----------------- 9. IDE Configurations & OS Temp Files -----------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.log

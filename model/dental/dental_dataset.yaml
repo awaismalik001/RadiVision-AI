@@ -1,0 +1,18 @@
+# YOLOv8 Dataset Configuration for Dental Panoramic Radiographs
+# Formatted for the DENTEX Challenge Dataset (Pathologies & FDI Tooth Numbering)
+
+path: ../../dataset/dental_xray
+train: images/train
+val: images/val
+test: images/test
+
+# Number of classes
+nc: 5
+
+# Diagnostic classifications on panoramic dental images
+names:
+  0: Healthy_Tooth
+  1: Caries
+  2: Deep_Caries
+  3: Periapical_Lesion
+  4: Impacted_Tooth

@@ -1,0 +1,20 @@
+# YOLOv8 Dataset Configuration for Musculoskeletal Bone Fracture Detection
+# Compatible with FracAtlas and GRAZPEDWRI-DX datasets
+
+path: ../../dataset/bone_xray
+train: images/train
+val: images/val
+test: images/test
+
+# Number of classes
+nc: 7
+
+# Class names mapping body regions and fracture condition
+names:
+  0: Fracture
+  1: Wrist_Radius
+  2: Forearm_Ulna
+  3: Elbow
+  4: Hand_Metacarpal
+  5: Humerus
+  6: Shoulder
