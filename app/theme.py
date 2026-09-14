@@ -44,16 +44,31 @@ TEXT_SECONDARY  = "#64748B"   # Subtitles, captions, metadata
 TEXT_MUTED      = "#94A3B8"   # Placeholder hints, tertiary text
 TEXT_LIGHT      = "#FFFFFF"   # Text on dark navy backgrounds
 
+# ----------------- Font Size Tokens -----------------
+FONT_XS   = "9px"    # Footer notes, minimal captions, subtle badges
+FONT_SM   = "10px"   # Field labels, table headers, subtitles, metadata
+FONT_BASE = "11px"   # Body text, table rows, buttons, nav items
+FONT_MD   = "12px"   # Card titles, section headings, radiograph label
+FONT_LG   = "13px"   # Page titles, top bar heading, brand label
+FONT_XL   = "16px"   # Stat card big numbers (dashboard only)
+
 # ----------------- Global Application QSS Stylesheet -----------------
 GLOBAL_STYLESHEET = f"""
 QMainWindow, QDialog {{
     background-color: {SURFACE_2};
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    font-family: 'Segoe UI';
+    font-size: {FONT_BASE};
     color: {TEXT_DARK};
 }}
 
 QWidget {{
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    font-family: 'Segoe UI';
+    font-size: {FONT_BASE};
+    color: {TEXT_DARK};
+}}
+
+QLabel {{
+    font-family: 'Segoe UI';
     color: {TEXT_DARK};
 }}
 
@@ -61,9 +76,9 @@ QWidget {{
 #TopBar {{
     background-color: {SURFACE_1};
     color: {TEXT_DARK};
-    min-height: 56px;
-    max-height: 64px;
-    padding: 0 20px;
+    min-height: 48px;
+    max-height: 54px;
+    padding: 0 16px;
     border-bottom: 1px solid {BORDER_COLOR};
 }}
 
@@ -74,8 +89,6 @@ QWidget {{
 /* Left Navigation Sidebar */
 #Sidebar {{
     background-color: {SURFACE_1};
-    min-width: 210px;
-    max-width: 210px;
     border-right: 1px solid {BORDER_COLOR};
 }}
 
@@ -83,12 +96,12 @@ QWidget {{
     background-color: transparent;
     color: {TEXT_SECONDARY};
     text-align: left;
-    padding: 9px 12px;
-    font-size: 13px;
+    padding: 7px 10px;
+    font-size: {FONT_BASE};
     font-weight: 500;
     border: none;
     border-radius: 6px;
-    margin: 1px 10px;
+    margin: 1px 6px;
 }}
 
 #Sidebar QPushButton:hover {{
@@ -106,8 +119,8 @@ QWidget {{
 QFrame.card, QWidget.card {{
     background-color: {SURFACE_1};
     border: 1px solid {BORDER_COLOR};
-    border-radius: 10px;
-    padding: 16px;
+    border-radius: 8px;
+    padding: 12px;
 }}
 
 /* Input Fields & Combos */
@@ -115,8 +128,8 @@ QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QComboBox {{
     background-color: #FFFFFF;
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: 6px 10px;
+    font-size: {FONT_BASE};
     color: {TEXT_DARK};
     selection-background-color: {PRIMARY_NAVY};
     selection-color: #FFFFFF;
@@ -130,7 +143,7 @@ QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QComboBo
 QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: top right;
-    width: 26px;
+    width: 24px;
     border-left: 1px solid {BORDER_COLOR};
 }}
 
@@ -140,8 +153,8 @@ QPushButton {{
     color: {TEXT_LIGHT};
     border: none;
     border-radius: 6px;
-    padding: 9px 16px;
-    font-size: 13px;
+    padding: 7px 14px;
+    font-size: {FONT_BASE};
     font-weight: 500;
 }}
 
@@ -195,14 +208,14 @@ QTableWidget, QTableView {{
     gridline-color: {BORDER_COLOR};
     selection-background-color: #E0F2FE;
     selection-color: {TEXT_DARK};
-    font-size: 13px;
+    font-size: {FONT_BASE};
 }}
 
 QHeaderView::section {{
     background-color: #F8FAFC;
     color: {TEXT_SECONDARY};
     font-weight: 600;
-    font-size: 12px;
+    font-size: {FONT_SM};
     padding: 8px 10px;
     border: none;
     border-bottom: 1px solid {BORDER_COLOR};
@@ -253,8 +266,8 @@ def get_role_badge_style(role: str) -> str:
             background-color: {BG_ACCENT};
             color: {TEXT_ACCENT};
             border-radius: 4px;
-            padding: 3px 10px;
-            font-size: 11px;
+            padding: 2px 8px;
+            font-size: {FONT_SM};
             font-weight: 600;
         """
     else:
@@ -262,8 +275,8 @@ def get_role_badge_style(role: str) -> str:
             background-color: {BG_TEAL};
             color: {TEXT_TEAL};
             border-radius: 4px;
-            padding: 3px 10px;
-            font-size: 11px;
+            padding: 2px 8px;
+            font-size: {FONT_SM};
             font-weight: 600;
         """
 
@@ -287,8 +300,8 @@ def get_status_badge_style(status_type: str) -> str:
         background-color: {bg};
         color: {fg};
         border: 0.5px solid {border};
-        border-radius: 6px;
-        padding: 3px 10px;
+        border-radius: 5px;
+        padding: 2px 8px;
         font-weight: 600;
-        font-size: 11px;
+        font-size: {FONT_SM};
     """

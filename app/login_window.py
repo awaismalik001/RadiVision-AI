@@ -14,13 +14,14 @@ Provides:
 from app.qt_compat import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QFrame, QMessageBox, QScrollArea, QStackedWidget,
-    QComboBox, Signal, Qt, QFont, QtCore
+    QComboBox, QSizePolicy, Signal, Qt, QFont, QtCore
 )
 
 from app.theme import (
     PRIMARY_NAVY, SECONDARY_BLUE, SURFACE_1, SURFACE_2,
     BORDER_COLOR, BORDER_STRONG, TEXT_DARK, TEXT_SECONDARY, TEXT_MUTED,
-    DANGER_RED, BG_DANGER, SUCCESS_GREEN, BG_SUCCESS, GLOBAL_STYLESHEET
+    DANGER_RED, BG_DANGER, SUCCESS_GREEN, BG_SUCCESS, GLOBAL_STYLESHEET,
+    FONT_XS, FONT_SM, FONT_BASE, FONT_MD, FONT_LG
 )
 from app.auth import authenticate_user, hash_password, validate_password_complexity, validate_email
 from app.database import db
@@ -74,7 +75,7 @@ class SegmentedTabControl(QFrame):
                 color: #FFFFFF;
                 border: none;
                 border-radius: 6px;
-                font-size: 13px;
+                font-size: {FONT_BASE};
                 font-weight: 600;
             }}
         """
@@ -84,7 +85,7 @@ class SegmentedTabControl(QFrame):
                 color: {TEXT_SECONDARY};
                 border: none;
                 border-radius: 6px;
-                font-size: 13px;
+                font-size: {FONT_BASE};
                 font-weight: 500;
             }}
             QPushButton:hover {{
@@ -107,8 +108,8 @@ class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("X-Ray AI — Secure Clinical Access")
-        self.setMinimumSize(460, 620)
-        self.resize(500, 680)
+        self.setMinimumSize(320, 420)
+        self.resize(400, 520)
         self.setStyleSheet(GLOBAL_STYLESHEET)
         self.attempts_remaining = 3
         self.anim_shake = None
@@ -124,39 +125,41 @@ class LoginWindow(QWidget):
 
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(20, 24, 20, 24)
+        main_layout.setContentsMargins(12, 12, 12, 12)
         main_layout.setAlignment(Qt.AlignCenter)
 
-        # Centered Auth Card Frame
+        # Centered Auth Card Frame (Responsive min/max bounds)
         self.card = QFrame(container)
         self.card.setObjectName("AuthCard")
-        self.card.setFixedWidth(400)
+        self.card.setMinimumWidth(280)
+        self.card.setMaximumWidth(360)
+        self.card.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.card.setStyleSheet(f"""
             #AuthCard {{
                 background-color: {SURFACE_1};
                 border: 0.5px solid {BORDER_COLOR};
-                border-radius: 16px;
-                padding: 24px 22px;
+                border-radius: 12px;
+                padding: 16px 14px;
             }}
         """)
 
         card_layout = QVBoxLayout(self.card)
-        card_layout.setSpacing(10)
-        card_layout.setContentsMargins(18, 18, 18, 18)
+        card_layout.setSpacing(6)
+        card_layout.setContentsMargins(12, 12, 12, 12)
 
         # 1. Circular Navy Stethoscope Logo
         logo_container = QHBoxLayout()
         logo_container.setAlignment(Qt.AlignCenter)
 
         logo_circle = QLabel(self.card)
-        logo_circle.setFixedSize(48, 48)
+        logo_circle.setFixedSize(38, 38)
         logo_circle.setAlignment(Qt.AlignCenter)
         logo_circle.setText("🩺")
         logo_circle.setStyleSheet(f"""
             background-color: {PRIMARY_NAVY};
             color: #FFFFFF;
-            border-radius: 24px;
-            font-size: 24px;
+            border-radius: 19px;
+            font-size: 16px;
         """)
         logo_container.addWidget(logo_circle)
         card_layout.addLayout(logo_container)
@@ -164,12 +167,12 @@ class LoginWindow(QWidget):
         # Title & Subtitle
         title = QLabel("X-Ray AI system", self.card)
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet(f"font-size: 17px; font-weight: 600; color: {TEXT_DARK}; margin-top: 4px;")
+        title.setStyleSheet(f"font-size: {FONT_LG}; font-weight: 600; color: {TEXT_DARK}; margin-top: 2px;")
         card_layout.addWidget(title)
 
         subtitle = QLabel("Secure clinical access", self.card)
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet(f"font-size: 12px; color: {TEXT_SECONDARY}; margin-bottom: 12px;")
+        subtitle.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY}; margin-bottom: 8px;")
         card_layout.addWidget(subtitle)
 
         # 2. Segmented Pill Tab Switcher [ Log in | Sign up ]
@@ -183,30 +186,30 @@ class LoginWindow(QWidget):
         # ---------------- FORM 1: LOG IN ----------------
         login_page = QWidget()
         login_layout = QVBoxLayout(login_page)
-        login_layout.setContentsMargins(0, 8, 0, 0)
-        login_layout.setSpacing(8)
+        login_layout.setContentsMargins(0, 6, 0, 0)
+        login_layout.setSpacing(6)
 
         # Username Input
         lbl_user = QLabel("Username", login_page)
-        lbl_user.setStyleSheet(f"font-size: 12px; color: {TEXT_SECONDARY}; margin-bottom: 2px;")
+        lbl_user.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY}; margin-bottom: 2px;")
         login_layout.addWidget(lbl_user)
 
         self.login_username = QLineEdit(login_page)
         self.login_username.setPlaceholderText("e.g. dr.ahmed")
         self.login_username.setText("admin")  # Default helper
-        self.login_username.setFixedHeight(38)
+        self.login_username.setFixedHeight(30)
         login_layout.addWidget(self.login_username)
 
         # Password Input
         lbl_pass = QLabel("Password", login_page)
-        lbl_pass.setStyleSheet(f"font-size: 12px; color: {TEXT_SECONDARY}; margin-bottom: 2px; margin-top: 4px;")
+        lbl_pass.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY}; margin-bottom: 2px; margin-top: 2px;")
         login_layout.addWidget(lbl_pass)
 
         self.login_password = QLineEdit(login_page)
         self.login_password.setEchoMode(QLineEdit.Password)
         self.login_password.setPlaceholderText("Enter your password")
         self.login_password.setText("Admin123!")  # Default helper
-        self.login_password.setFixedHeight(38)
+        self.login_password.setFixedHeight(30)
         self.login_password.returnPressed.connect(self.handle_login)
         login_layout.addWidget(self.login_password)
 
@@ -220,7 +223,7 @@ class LoginWindow(QWidget):
             color: {SECONDARY_BLUE};
             border: none;
             padding: 0;
-            font-size: 12px;
+            font-size: {FONT_SM};
             font-weight: 500;
         """)
         forgot_btn.clicked.connect(self.show_forgot_password_dialog)
@@ -232,16 +235,16 @@ class LoginWindow(QWidget):
         self.err_box.setStyleSheet(f"""
             background-color: {BG_DANGER};
             border-radius: 6px;
-            padding: 8px 10px;
+            padding: 6px 8px;
         """)
         err_box_layout = QHBoxLayout(self.err_box)
-        err_box_layout.setContentsMargins(8, 8, 8, 8)
+        err_box_layout.setContentsMargins(6, 6, 6, 6)
         err_box_layout.setSpacing(6)
 
         err_icon = QLabel("⚠", self.err_box)
-        err_icon.setStyleSheet(f"color: {DANGER_RED}; font-size: 14px; font-weight: bold;")
+        err_icon.setStyleSheet(f"color: {DANGER_RED}; font-size: {FONT_MD}; font-weight: bold;")
         self.err_text = QLabel("Invalid username or password.", self.err_box)
-        self.err_text.setStyleSheet(f"color: {DANGER_RED}; font-size: 12px; font-weight: 500;")
+        self.err_text.setStyleSheet(f"color: {DANGER_RED}; font-size: {FONT_SM}; font-weight: 500;")
         self.err_text.setWordWrap(True)
 
         err_box_layout.addWidget(err_icon)
@@ -251,7 +254,7 @@ class LoginWindow(QWidget):
 
         # Log in Button
         self.btn_do_login = QPushButton("Log in", login_page)
-        self.btn_do_login.setFixedHeight(40)
+        self.btn_do_login.setFixedHeight(32)
         self.btn_do_login.setCursor(Qt.PointingHandCursor)
         self.btn_do_login.setStyleSheet(f"""
             QPushButton {{
@@ -259,7 +262,7 @@ class LoginWindow(QWidget):
                 color: #FFFFFF;
                 border: none;
                 border-radius: 6px;
-                font-size: 13px;
+                font-size: {FONT_BASE};
                 font-weight: 600;
             }}
             QPushButton:hover {{
@@ -272,7 +275,7 @@ class LoginWindow(QWidget):
         # Footer security note
         login_footer = QLabel("Access is logged for security and audit purposes.", login_page)
         login_footer.setAlignment(Qt.AlignCenter)
-        login_footer.setStyleSheet(f"font-size: 11px; color: {TEXT_MUTED}; margin-top: 10px;")
+        login_footer.setStyleSheet(f"font-size: {FONT_XS}; color: {TEXT_MUTED}; margin-top: 10px;")
         login_layout.addWidget(login_footer)
 
         self.forms_stack.addWidget(login_page)
@@ -293,60 +296,72 @@ class LoginWindow(QWidget):
         s_box_layout = QHBoxLayout(self.signup_status_box)
         s_box_layout.setContentsMargins(6, 6, 6, 6)
         self.signup_status_lbl = QLabel("", self.signup_status_box)
-        self.signup_status_lbl.setStyleSheet(f"color: {DANGER_RED}; font-size: 11px; font-weight: 500;")
+        self.signup_status_lbl.setStyleSheet(f"color: {DANGER_RED}; font-size: {FONT_XS}; font-weight: 500;")
         self.signup_status_lbl.setWordWrap(True)
         s_box_layout.addWidget(self.signup_status_lbl)
         self.signup_status_box.setVisible(False)
         signup_layout.addWidget(self.signup_status_box)
 
         # Full name
-        signup_layout.addWidget(QLabel("Full name", signup_page))
+        lbl_fname = QLabel("Full name", signup_page)
+        lbl_fname.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        signup_layout.addWidget(lbl_fname)
         self.sign_name = QLineEdit(signup_page)
         self.sign_name.setPlaceholderText("e.g. Ahmed Raza")
-        self.sign_name.setFixedHeight(34)
+        self.sign_name.setFixedHeight(28)
         signup_layout.addWidget(self.sign_name)
 
         # Username
-        signup_layout.addWidget(QLabel("Username", signup_page))
+        lbl_uname = QLabel("Username", signup_page)
+        lbl_uname.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        signup_layout.addWidget(lbl_uname)
         self.sign_user = QLineEdit(signup_page)
         self.sign_user.setPlaceholderText("Choose a username")
-        self.sign_user.setFixedHeight(34)
+        self.sign_user.setFixedHeight(28)
         signup_layout.addWidget(self.sign_user)
 
         # Email address
-        signup_layout.addWidget(QLabel("Email address", signup_page))
+        lbl_email = QLabel("Email address", signup_page)
+        lbl_email.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        signup_layout.addWidget(lbl_email)
         self.sign_email = QLineEdit(signup_page)
         self.sign_email.setPlaceholderText("name@hospital.com")
-        self.sign_email.setFixedHeight(34)
+        self.sign_email.setFixedHeight(28)
         signup_layout.addWidget(self.sign_email)
 
         # Password
-        signup_layout.addWidget(QLabel("Password", signup_page))
+        lbl_spass = QLabel("Password", signup_page)
+        lbl_spass.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        signup_layout.addWidget(lbl_spass)
         self.sign_pass = QLineEdit(signup_page)
         self.sign_pass.setEchoMode(QLineEdit.Password)
         self.sign_pass.setPlaceholderText("At least 8 characters")
-        self.sign_pass.setFixedHeight(34)
+        self.sign_pass.setFixedHeight(28)
         signup_layout.addWidget(self.sign_pass)
 
         # Confirm password
-        signup_layout.addWidget(QLabel("Confirm password", signup_page))
+        lbl_sconf = QLabel("Confirm password", signup_page)
+        lbl_sconf.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        signup_layout.addWidget(lbl_sconf)
         self.sign_confirm = QLineEdit(signup_page)
         self.sign_confirm.setEchoMode(QLineEdit.Password)
         self.sign_confirm.setPlaceholderText("Re-enter password")
-        self.sign_confirm.setFixedHeight(34)
+        self.sign_confirm.setFixedHeight(28)
         signup_layout.addWidget(self.sign_confirm)
 
         # Role Selector
-        signup_layout.addWidget(QLabel("Access Role", signup_page))
+        lbl_srole = QLabel("Access Role", signup_page)
+        lbl_srole.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        signup_layout.addWidget(lbl_srole)
         self.sign_role = QComboBox(signup_page)
         self.sign_role.addItems(["User (Clinician)", "Admin (Administrator)"])
-        self.sign_role.setFixedHeight(34)
+        self.sign_role.setFixedHeight(28)
         signup_layout.addWidget(self.sign_role)
 
         # Create account button
-        signup_layout.addSpacing(4)
+        signup_layout.addSpacing(2)
         self.btn_create_acc = QPushButton("Create account", signup_page)
-        self.btn_create_acc.setFixedHeight(38)
+        self.btn_create_acc.setFixedHeight(32)
         self.btn_create_acc.setCursor(Qt.PointingHandCursor)
         self.btn_create_acc.setStyleSheet(f"""
             QPushButton {{
@@ -354,7 +369,7 @@ class LoginWindow(QWidget):
                 color: #FFFFFF;
                 border: none;
                 border-radius: 6px;
-                font-size: 13px;
+                font-size: {FONT_BASE};
                 font-weight: 600;
             }}
             QPushButton:hover {{
@@ -367,7 +382,7 @@ class LoginWindow(QWidget):
         # Signup footer note
         signup_footer = QLabel("New accounts are created with User access by default.", signup_page)
         signup_footer.setAlignment(Qt.AlignCenter)
-        signup_footer.setStyleSheet(f"font-size: 11px; color: {TEXT_MUTED}; margin-top: 6px;")
+        signup_footer.setStyleSheet(f"font-size: {FONT_XS}; color: {TEXT_MUTED}; margin-top: 6px;")
         signup_layout.addWidget(signup_footer)
 
         self.forms_stack.addWidget(signup_page)

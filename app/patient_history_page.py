@@ -11,7 +11,7 @@ import os
 from app.qt_compat import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
-    QFrame, QMessageBox, QComboBox, Qt
+    QFrame, QMessageBox, QComboBox, QSizePolicy, Qt
 )
 
 from app.theme import (
@@ -32,39 +32,48 @@ class PatientHistoryPage(QWidget):
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(14)
 
-        # Header & Filter Row
+        # Header & Filter Card
         card = QFrame(self)
         card.setProperty("class", "card")
         card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(14, 12, 14, 12)
+        card_layout.setSpacing(10)
 
-        top_row = QHBoxLayout()
+        # Title Row
+        title_row = QHBoxLayout()
         self.title_lbl = QLabel("Patient Examination History", card)
-        self.title_lbl.setStyleSheet(f"font-weight: bold; font-size: 16px; color: {PRIMARY_NAVY};")
-        top_row.addWidget(self.title_lbl)
+        self.title_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {PRIMARY_NAVY};")
+        self.title_lbl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.title_lbl.setWordWrap(True)
+        title_row.addWidget(self.title_lbl)
+        card_layout.addLayout(title_row)
 
-        top_row.addStretch()
+        # Filters Row
+        filters_row = QHBoxLayout()
+        filters_row.setSpacing(10)
 
         self.search_input = QLineEdit(card)
         self.search_input.setPlaceholderText("Search by Patient Name or Diagnosis...")
-        self.search_input.setFixedWidth(280)
+        self.search_input.setMinimumWidth(160)
+        self.search_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.search_input.textChanged.connect(self.filter_records)
-        top_row.addWidget(self.search_input)
+        filters_row.addWidget(self.search_input, 1)
 
         self.type_filter = QComboBox(card)
         self.type_filter.addItems(["All Modalities", "Chest", "Bone", "Dental"])
         self.type_filter.currentIndexChanged.connect(self.filter_records)
-        top_row.addWidget(self.type_filter)
+        filters_row.addWidget(self.type_filter)
 
         refresh_btn = QPushButton("Refresh", card)
         refresh_btn.setProperty("class", "secondary")
         refresh_btn.setCursor(Qt.PointingHandCursor)
         refresh_btn.clicked.connect(self.load_records)
-        top_row.addWidget(refresh_btn)
+        filters_row.addWidget(refresh_btn)
 
-        card_layout.addLayout(top_row)
+        card_layout.addLayout(filters_row)
         layout.addWidget(card)
 
         # Records Table
@@ -85,7 +94,7 @@ class PatientHistoryPage(QWidget):
 
         btn_row.addStretch()
         self.record_count_lbl = QLabel("0 records found", self)
-        self.record_count_lbl.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 12px;")
+        self.record_count_lbl.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 11px;")
         btn_row.addWidget(self.record_count_lbl)
 
         layout.addLayout(btn_row)

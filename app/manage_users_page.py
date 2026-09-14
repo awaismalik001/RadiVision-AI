@@ -8,7 +8,7 @@ Allows viewing registered clinicians, modifying roles, and toggling active statu
 from app.qt_compat import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QFrame,
-    QMessageBox, QDialog, QLineEdit, QComboBox, Qt
+    QMessageBox, QDialog, QLineEdit, QComboBox, QSizePolicy, Qt
 )
 
 from app.theme import PRIMARY_NAVY, SECONDARY_BLUE, DANGER_RED, SUCCESS_GREEN, CARD_BG
@@ -21,7 +21,8 @@ class AddUserDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Add System User")
-        self.setFixedSize(380, 420)
+        self.setMinimumSize(320, 380)
+        self.resize(380, 420)
         self._init_ui()
 
     def _init_ui(self):
@@ -109,7 +110,9 @@ class ManageUsersPage(QWidget):
         card_layout = QHBoxLayout(card)
 
         title = QLabel("System User Accounts & Role Permissions", card)
-        title.setStyleSheet(f"font-weight: bold; font-size: 16px; color: {PRIMARY_NAVY};")
+        title.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {PRIMARY_NAVY};")
+        title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        title.setWordWrap(True)
         card_layout.addWidget(title)
 
         card_layout.addStretch()
@@ -132,6 +135,7 @@ class ManageUsersPage(QWidget):
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels(["User ID", "Full Name", "Username", "Email", "Role", "Status", "Registered On"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setMinimumSectionSize(75)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)

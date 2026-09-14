@@ -19,7 +19,7 @@ from app.qt_compat import check_qt_installed
 if not check_qt_installed():
     sys.exit(1)
 
-from app.qt_compat import QtWidgets, QtCore, Qt
+from app.qt_compat import QtWidgets, QtCore, Qt, QFont
 from app.theme import GLOBAL_STYLESHEET
 from app.database import db
 from app.login_window import LoginWindow
@@ -70,15 +70,26 @@ class RadiVisionApp:
         self.login_window.show()
 
 def main():
-    # Enable high-DPI scaling
-    if hasattr(Qt, 'AA_EnableHighDpiScaling'):
+    # Configure smooth High-DPI scaling (prevents Qt5 200% rounding bug on 125%/150% Windows scaling)
+    if hasattr(QtCore.Qt, 'HighDpiScaleFactorRoundingPolicy'):
+        QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+        QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
+        QtWidgets.QApplication.setHighDpiScaleFactorRoundingPolicy(
+            QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+        )
+    elif hasattr(Qt, 'AA_EnableHighDpiScaling'):
         QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
         QtWidgets.QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("RadiVision AI")
     app.setOrganizationName("RadiVision AI")
+
+    # Set refined, anti-aliased application-wide Segoe UI font
+    app_font = QFont("Segoe UI", 9)
+    app_font.setStyleStrategy(QFont.PreferAntialias)
+    app.setFont(app_font)
+
     app.setStyleSheet(GLOBAL_STYLESHEET)
 
     # Initialize and start controller

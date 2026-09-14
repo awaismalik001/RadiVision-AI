@@ -9,7 +9,7 @@ inference executions, and administrative interventions.
 from app.qt_compat import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
-    QFrame, QMessageBox, Qt
+    QFrame, QMessageBox, QSizePolicy, Qt
 )
 
 from app.theme import PRIMARY_NAVY, CARD_BG, TEXT_MUTED
@@ -25,32 +25,41 @@ class ActivityLogPage(QWidget):
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(14)
 
         # Header Card
         card = QFrame(self)
         card.setProperty("class", "card")
-        card_layout = QHBoxLayout(card)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(14, 12, 14, 12)
+        card_layout.setSpacing(10)
 
+        title_row = QHBoxLayout()
         title = QLabel("System Security & Clinical Audit Trail", card)
-        title.setStyleSheet(f"font-weight: bold; font-size: 16px; color: {PRIMARY_NAVY};")
-        card_layout.addWidget(title)
+        title.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {PRIMARY_NAVY};")
+        title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        title.setWordWrap(True)
+        title_row.addWidget(title)
+        card_layout.addLayout(title_row)
 
-        card_layout.addStretch()
+        filter_row = QHBoxLayout()
+        filter_row.setSpacing(10)
 
         self.search_in = QLineEdit(card)
-        self.search_in.setPlaceholderText("Filter audit events...")
-        self.search_in.setFixedWidth(260)
+        self.search_in.setPlaceholderText("Filter audit events by user, action or details...")
+        self.search_in.setMinimumWidth(160)
+        self.search_in.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.search_in.textChanged.connect(self.filter_logs)
-        card_layout.addWidget(self.search_in)
+        filter_row.addWidget(self.search_in, 1)
 
         refresh_btn = QPushButton("Refresh Logs", card)
         refresh_btn.setProperty("class", "secondary")
         refresh_btn.setCursor(Qt.PointingHandCursor)
         refresh_btn.clicked.connect(self.load_logs)
-        card_layout.addWidget(refresh_btn)
+        filter_row.addWidget(refresh_btn)
 
+        card_layout.addLayout(filter_row)
         layout.addWidget(card)
 
         # Logs Table
@@ -60,12 +69,13 @@ class ActivityLogPage(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setMinimumSectionSize(75)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         layout.addWidget(self.table)
 
         self.count_lbl = QLabel("0 events logged", self)
-        self.count_lbl.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 12px;")
+        self.count_lbl.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 11px;")
         layout.addWidget(self.count_lbl, 0, Qt.AlignRight)
 
     def load_logs(self):

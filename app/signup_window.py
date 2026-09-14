@@ -13,7 +13,8 @@ from app.qt_compat import (
 
 from app.theme import (
     PRIMARY_NAVY, SECONDARY_BLUE, CARD_BG,
-    TEXT_DARK, TEXT_MUTED, DANGER_RED, SUCCESS_GREEN, GLOBAL_STYLESHEET
+    TEXT_DARK, TEXT_SECONDARY, TEXT_MUTED, DANGER_RED, SUCCESS_GREEN, GLOBAL_STYLESHEET,
+    FONT_XS, FONT_SM, FONT_BASE, FONT_MD, FONT_LG
 )
 from app.auth import hash_password, validate_password_complexity, validate_email
 from app.database import db
@@ -26,8 +27,8 @@ class SignUpWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("RadiVision AI — Register Account")
-        self.setMinimumSize(460, 560)
-        self.resize(520, 680)
+        self.setMinimumSize(380, 480)
+        self.resize(440, 560)
         self.setStyleSheet(GLOBAL_STYLESHEET)
         self._init_ui()
 
@@ -43,83 +44,101 @@ class SignUpWindow(QWidget):
 
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(30, 24, 30, 24)
+        main_layout.setContentsMargins(20, 16, 20, 16)
         main_layout.setAlignment(Qt.AlignCenter)
 
         card = QFrame(container)
         card.setObjectName("SignUpCard")
-        card.setMaximumWidth(480)
+        card.setMaximumWidth(400)
         card.setStyleSheet(f"""
             #SignUpCard {{
                 background-color: {CARD_BG};
                 border: 1px solid #CBD5E1;
                 border-radius: 12px;
-                padding: 24px;
+                padding: 16px;
             }}
         """)
         card_layout = QVBoxLayout(card)
-        card_layout.setSpacing(10)
+        card_layout.setSpacing(6)
 
         # Title
         title = QLabel("Create New Account", card)
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet(f"font-size: 22px; font-weight: bold; color: {PRIMARY_NAVY};")
+        title.setStyleSheet(f"font-size: {FONT_LG}; font-weight: bold; color: {PRIMARY_NAVY};")
         card_layout.addWidget(title)
 
         sub = QLabel("Register as an Authorized Clinician or Administrator", card)
         sub.setAlignment(Qt.AlignCenter)
-        sub.setStyleSheet(f"font-size: 11px; color: {TEXT_MUTED}; margin-bottom: 6px;")
+        sub.setStyleSheet(f"font-size: {FONT_XS}; color: {TEXT_MUTED}; margin-bottom: 4px;")
         card_layout.addWidget(sub)
 
         # Error / Success Label
         self.status_label = QLabel("", card)
         self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setStyleSheet(f"color: {DANGER_RED}; font-weight: bold; font-size: 11px;")
+        self.status_label.setStyleSheet(f"color: {DANGER_RED}; font-weight: bold; font-size: {FONT_XS};")
         self.status_label.setVisible(False)
         card_layout.addWidget(self.status_label)
 
         # Full Name
-        card_layout.addWidget(QLabel("Full Legal Name", card))
+        lbl_fn = QLabel("Full Legal Name", card)
+        lbl_fn.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        card_layout.addWidget(lbl_fn)
         self.name_input = QLineEdit(card)
         self.name_input.setPlaceholderText("Dr. John Doe")
+        self.name_input.setFixedHeight(28)
         card_layout.addWidget(self.name_input)
 
         # Username
-        card_layout.addWidget(QLabel("Username", card))
+        lbl_un = QLabel("Username", card)
+        lbl_un.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        card_layout.addWidget(lbl_un)
         self.user_input = QLineEdit(card)
         self.user_input.setPlaceholderText("johndoe")
+        self.user_input.setFixedHeight(28)
         card_layout.addWidget(self.user_input)
 
         # Email
-        card_layout.addWidget(QLabel("Institutional Email", card))
+        lbl_em = QLabel("Institutional Email", card)
+        lbl_em.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        card_layout.addWidget(lbl_em)
         self.email_input = QLineEdit(card)
         self.email_input.setPlaceholderText("johndoe@radivision.ai")
+        self.email_input.setFixedHeight(28)
         card_layout.addWidget(self.email_input)
 
         # Password
-        card_layout.addWidget(QLabel("Password (Min 8 chars, letters & numbers)", card))
+        lbl_pw = QLabel("Password (Min 8 chars, letters & numbers)", card)
+        lbl_pw.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        card_layout.addWidget(lbl_pw)
         self.pass_input = QLineEdit(card)
         self.pass_input.setEchoMode(QLineEdit.Password)
         self.pass_input.setPlaceholderText("••••••••")
+        self.pass_input.setFixedHeight(28)
         card_layout.addWidget(self.pass_input)
 
         # Confirm Password
-        card_layout.addWidget(QLabel("Confirm Password", card))
+        lbl_cpw = QLabel("Confirm Password", card)
+        lbl_cpw.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        card_layout.addWidget(lbl_cpw)
         self.confirm_input = QLineEdit(card)
         self.confirm_input.setEchoMode(QLineEdit.Password)
         self.confirm_input.setPlaceholderText("••••••••")
+        self.confirm_input.setFixedHeight(28)
         card_layout.addWidget(self.confirm_input)
 
         # Role
-        card_layout.addWidget(QLabel("Assigned Role", card))
+        lbl_rl = QLabel("Assigned Role", card)
+        lbl_rl.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
+        card_layout.addWidget(lbl_rl)
         self.role_combo = QComboBox(card)
         self.role_combo.addItems(["User", "Admin"])
+        self.role_combo.setFixedHeight(28)
         card_layout.addWidget(self.role_combo)
 
         # Register Button
-        card_layout.addSpacing(10)
+        card_layout.addSpacing(4)
         self.register_btn = QPushButton("Complete Registration", card)
-        self.register_btn.setFixedHeight(40)
+        self.register_btn.setFixedHeight(32)
         self.register_btn.setCursor(Qt.PointingHandCursor)
         self.register_btn.clicked.connect(self.handle_signup)
         card_layout.addWidget(self.register_btn)
