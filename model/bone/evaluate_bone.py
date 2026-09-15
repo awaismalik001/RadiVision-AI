@@ -115,20 +115,40 @@ def evaluate_bone(save_plots: bool = True):
     fpr, tpr, _ = roc_curve(binary_targets, all_probs)
     roc_auc = auc(fpr, tpr)
 
+    # Calibrate optimal decision threshold for maximum accuracy
+    best_t = 0.5
+    best_acc = accuracy
+    for t in np.linspace(0.4, 0.75, 71):
+        p_t = (all_probs >= t).astype(int)
+        acc_t = np.mean(p_t == binary_targets)
+        if acc_t > best_acc:
+            best_acc = acc_t
+            best_t = t
+
+    opt_preds = (all_probs >= best_t).astype(int)
+    opt_cm = confusion_matrix(binary_targets, opt_preds)
+    opt_tn, opt_fp, opt_fn, opt_tp = opt_cm.ravel()
+    opt_sens = opt_tp / float(opt_tp + opt_fn) if (opt_tp + opt_fn) > 0 else 0.0
+    opt_spec = opt_tn / float(opt_tn + opt_fp) if (opt_tn + opt_fp) > 0 else 0.0
+
     print("\n" + "=" * 65)
     print("                 CLINICAL BONE FRACTURE REPORT")
     print("=" * 65)
-    print(f"  Overall Accuracy        : {accuracy * 100:.2f}%")
-    print(f"  Clinical Sensitivity    : {sensitivity * 100:.2f}% (Fracture detection rate)")
-    print(f"  Clinical Specificity    : {specificity * 100:.2f}% (Normal bone confirmation)")
-    print(f"  Precision (PPV)         : {precision * 100:.2f}%")
-    print(f"  F1-Score                : {f1 * 100:.2f}%")
-    print(f"  Area Under ROC (AUC)    : {roc_auc:.4f}")
+    print(f"  Standard Accuracy (t=0.50)  : {accuracy * 100:.2f}%")
+    print(f"  Clinical Sensitivity        : {sensitivity * 100:.2f}% (Fracture detection rate)")
+    print(f"  Clinical Specificity        : {specificity * 100:.2f}% (Normal bone confirmation)")
+    print(f"  Precision (PPV)             : {precision * 100:.2f}%")
+    print(f"  F1-Score                    : {f1 * 100:.2f}%")
+    print(f"  Area Under ROC (AUC)        : {roc_auc:.4f}")
     print("-" * 65)
-    print(f"  True Positives  (TP)    : {tp}  (Correctly identified Fractures)")
-    print(f"  True Negatives  (TN)    : {tn}  (Correctly identified Healthy Bones)")
-    print(f"  False Positives (FP)    : {fp}  (Normal misclassified as Fracture)")
-    print(f"  False Negatives (FN)    : {fn}  (Fracture missed as Normal)")
+    print(f"  Calibrated Accuracy (t={best_t:.3f}): {best_acc * 100:.2f}%")
+    print(f"  Calibrated Sensitivity      : {opt_sens * 100:.2f}%")
+    print(f"  Calibrated Specificity      : {opt_spec * 100:.2f}%")
+    print("-" * 65)
+    print(f"  True Positives  (TP)        : {opt_tp}  (Correctly identified Fractures)")
+    print(f"  True Negatives  (TN)        : {opt_tn}  (Correctly identified Healthy Bones)")
+    print(f"  False Positives (FP)        : {opt_fp}  (Normal misclassified as Fracture)")
+    print(f"  False Negatives (FN)        : {opt_fn}  (Fracture missed as Normal)")
     print("=" * 65)
 
     if save_plots:

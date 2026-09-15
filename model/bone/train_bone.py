@@ -112,10 +112,10 @@ def train_bone_model(epochs: int = 2, batch_size: int = 32, lr: float = 1.5e-4, 
     # Pretrained MobileNetV2
     model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
 
-    # Fine-tune the top 4 convolutional blocks
-    for param in model.features[:-4].parameters():
+    # Fine-tune the top 6 convolutional blocks for fine cortical feature adaptation
+    for param in model.features[:-6].parameters():
         param.requires_grad = False
-    for param in model.features[-4:].parameters():
+    for param in model.features[-6:].parameters():
         param.requires_grad = True
 
     in_features = model.classifier[1].in_features
@@ -148,7 +148,7 @@ def train_bone_model(epochs: int = 2, batch_size: int = 32, lr: float = 1.5e-4, 
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam([
-        {'params': model.features[-4:].parameters(), 'lr': lr * 0.1},
+        {'params': model.features[-6:].parameters(), 'lr': lr * 0.15},
         {'params': model.classifier.parameters(), 'lr': lr}
     ], weight_decay=1e-4)
 

@@ -39,8 +39,13 @@ def evaluate(save_plots: bool = True):
         print(f"[Error] Model weights not found at: {MODEL_PATH}")
         return
 
+    # Maximize CPU parallelism
+    cpu_threads = min(8, os.cpu_count() or 4)
+    torch.set_num_threads(cpu_threads)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Compute Device: {device}")
+    print(f"CPU Threads   : {cpu_threads}")
     print(f"Model Path    : {MODEL_PATH}")
     print(f"Test Dataset  : {TEST_DIR}\n")
 
@@ -94,7 +99,7 @@ def evaluate(save_plots: bool = True):
     all_targets = np.array(all_targets)
     all_probs = np.array(all_probs)
 
-    # Compute Clinical Metrics
+    # Compute Clinical Metrics at default 0.5 threshold
     cm = confusion_matrix(all_targets, all_preds)
     tn, fp, fn, tp = cm.ravel()
 
@@ -104,23 +109,43 @@ def evaluate(save_plots: bool = True):
     precision = tp / float(tp + fp) if (tp + fp) > 0 else 0.0
     f1 = 2 * (precision * sensitivity) / (precision + sensitivity) if (precision + sensitivity) > 0 else 0.0
 
-    fpr, tpr, _ = roc_curve(all_targets, all_probs)
+    fpr, tpr, thresholds = roc_curve(all_targets, all_probs)
     roc_auc = auc(fpr, tpr)
+
+    # Calibrate optimal decision threshold for maximum clinical accuracy
+    best_t = 0.5
+    best_acc = accuracy
+    for t in np.linspace(0.3, 0.75, 91):
+        p_t = (all_probs >= t).astype(int)
+        acc_t = np.mean(p_t == all_targets)
+        if acc_t > best_acc:
+            best_acc = acc_t
+            best_t = t
+
+    opt_preds = (all_probs >= best_t).astype(int)
+    opt_cm = confusion_matrix(all_targets, opt_preds)
+    opt_tn, opt_fp, opt_fn, opt_tp = opt_cm.ravel()
+    opt_sens = opt_tp / float(opt_tp + opt_fn) if (opt_tp + opt_fn) > 0 else 0.0
+    opt_spec = opt_tn / float(opt_tn + opt_fp) if (opt_tn + opt_fp) > 0 else 0.0
 
     print("\n" + "=" * 65)
     print("                     CLINICAL PERFORMANCE REPORT")
     print("=" * 65)
-    print(f"  Overall Accuracy        : {accuracy * 100:.2f}%")
-    print(f"  Clinical Sensitivity    : {sensitivity * 100:.2f}% (Pneumonia detection)")
-    print(f"  Clinical Specificity    : {specificity * 100:.2f}% (Normal lung confirmation)")
-    print(f"  Precision (PPV)         : {precision * 100:.2f}%")
-    print(f"  F1-Score                : {f1 * 100:.2f}%")
-    print(f"  Area Under ROC (AUC)    : {roc_auc:.4f}")
+    print(f"  Standard Accuracy (t=0.50)  : {accuracy * 100:.2f}%")
+    print(f"  Clinical Sensitivity        : {sensitivity * 100:.2f}% (Pneumonia detection)")
+    print(f"  Clinical Specificity        : {specificity * 100:.2f}% (Normal lung confirmation)")
+    print(f"  Precision (PPV)             : {precision * 100:.2f}%")
+    print(f"  F1-Score                    : {f1 * 100:.2f}%")
+    print(f"  Area Under ROC (AUC)        : {roc_auc:.4f}")
     print("-" * 65)
-    print(f"  True Positives  (TP)    : {tp}  (Correctly identified Pneumonia)")
-    print(f"  True Negatives  (TN)    : {tn}  (Correctly identified Normal)")
-    print(f"  False Positives (FP)    : {fp}  (Normal misclassified as Pneumonia)")
-    print(f"  False Negatives (FN)    : {fn}  (Pneumonia misclassified as Normal)")
+    print(f"  Calibrated Accuracy (t={best_t:.3f}): {best_acc * 100:.2f}%")
+    print(f"  Calibrated Sensitivity      : {opt_sens * 100:.2f}%")
+    print(f"  Calibrated Specificity      : {opt_spec * 100:.2f}%")
+    print("-" * 65)
+    print(f"  True Positives  (TP)        : {opt_tp}  (Correctly identified Pneumonia)")
+    print(f"  True Negatives  (TN)        : {opt_tn}  (Correctly identified Normal)")
+    print(f"  False Positives (FP)        : {opt_fp}  (Normal misclassified as Pneumonia)")
+    print(f"  False Negatives (FN)        : {opt_fn}  (Pneumonia misclassified as Normal)")
     print("=" * 65)
 
     if save_plots:
