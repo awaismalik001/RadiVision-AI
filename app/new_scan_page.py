@@ -279,7 +279,7 @@ class NewScanPage(QWidget):
         modality_row.addWidget(self.modality_status_lbl, 1)
 
         self.modality_override = QComboBox(demo_card)
-        self.modality_override.addItems(["Chest", "Bone", "Dental"])
+        self.modality_override.addItems(["Chest", "Bone"])
         self.modality_override.setFixedHeight(28)
         modality_row.addWidget(self.modality_override)
         demo_layout.addLayout(modality_row)

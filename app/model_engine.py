@@ -57,7 +57,6 @@ TYPE_MODEL_PATH = os.path.join(MODELS_DIR, "type_classifier", "xray_type_classif
 CHEST_MODEL_PATH = os.path.join(MODELS_DIR, "chest", "chest_xray_model.h5")
 CHEST_MODEL_PT = os.path.join(MODELS_DIR, "chest", "chest_xray_model.pt")
 BONE_MODEL_PATH = os.path.join(MODELS_DIR, "bone", "bone_fracture_model.pt")
-DENTAL_MODEL_PATH = os.path.join(MODELS_DIR, "dental", "dental_xray_model.pt")
 
 class ModelEngine:
     """Singleton inference manager for all deep learning models."""
@@ -75,7 +74,7 @@ class ModelEngine:
         self.chest_model = None
         self.chest_model_pt = None
         self.bone_model = None
-        self.dental_model = None
+        self.bone_model_pt = None
 
         # Load PyTorch Chest Model
         if HAS_TORCH and os.path.exists(CHEST_MODEL_PT):
@@ -142,18 +141,10 @@ class ModelEngine:
             except Exception as e:
                 print(f"[AI Engine] Error loading Bone model: {e}")
 
-        # Load Dental YOLOv8 Model
-        if HAS_YOLO and os.path.exists(DENTAL_MODEL_PATH):
-            try:
-                self.dental_model = YOLO(DENTAL_MODEL_PATH)
-                print("[AI Engine] Dental YOLOv8 loaded successfully.")
-            except Exception as e:
-                print(f"[AI Engine] Error loading Dental model: {e}")
-
-    # ----------------- 1. Modality Auto-Detection -----------------
+    # ----------------- 1. Modality Triage (Chest vs. Bone) -----------------
     def detect_modality(self, image_path: str) -> Tuple[str, float]:
         """
-        Classifies the incoming image as 'Chest', 'Bone', or 'Dental'.
+        Classifies the incoming image as 'Chest' or 'Bone'.
         Returns (predicted_modality, confidence_score).
         """
         if self.type_model is not None and HAS_TF:
@@ -163,8 +154,8 @@ class ModelEngine:
                 x = np.expand_dims(x, axis=0)
                 x = preprocess_input(x)
                 preds = self.type_model.predict(x, verbose=0)[0]
-                classes = ["Bone", "Chest", "Dental"]
-                best_idx = int(np.argmax(preds))
+                classes = ["Bone", "Chest"]
+                best_idx = 0 if preds[0] >= preds[1] else 1
                 return classes[best_idx], float(preds[best_idx])
             except Exception as e:
                 print(f"[AI Engine] Type detection error: {e}")
@@ -174,14 +165,9 @@ class ModelEngine:
             with Image.open(image_path) as img:
                 w, h = img.size
                 aspect = w / float(h)
-                
-                # Dental panoramic images are distinctly wide (aspect ratio >= 1.7)
-                if aspect >= 1.65:
-                    return "Dental", 0.94
-                # Chest X-rays are typically approximately square (aspect between 0.85 and 1.25)
-                elif 0.82 <= aspect <= 1.25:
+                # Chest X-rays are typically approximately square (aspect between 0.82 and 1.25)
+                if 0.82 <= aspect <= 1.25:
                     return "Chest", 0.96
-                # Extremity/bone radiographs are often tall or elongated (aspect < 0.8 or between 1.25 and 1.6)
                 else:
                     return "Bone", 0.91
         except Exception:
@@ -583,8 +569,6 @@ class ModelEngine:
             return self.predict_chest(image_path)
         elif mod == "Bone":
             return self.predict_bone(image_path)
-        elif mod == "Dental":
-            return self.predict_dental(image_path)
         else:
             raise ValueError(f"Unsupported modality: {confirmed_modality}")
 

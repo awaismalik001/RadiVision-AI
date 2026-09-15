@@ -63,7 +63,7 @@ class PatientHistoryPage(QWidget):
         filters_row.addWidget(self.search_input, 1)
 
         self.type_filter = QComboBox(card)
-        self.type_filter.addItems(["All Modalities", "Chest", "Bone", "Dental"])
+        self.type_filter.addItems(["All Modalities", "Chest", "Bone"])
         self.type_filter.currentIndexChanged.connect(self.filter_records)
         filters_row.addWidget(self.type_filter)
 
