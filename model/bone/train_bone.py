@@ -93,6 +93,11 @@ def train_bone_model(epochs: int = 2, batch_size: int = 32, lr: float = 1.5e-4, 
     if use_all or samples_per_class is None:
         train_dataset = full_train_dataset
         print(f"Training on ALL {len(train_dataset)} available clinical radiographs.")
+        
+        # Balanced Sampler to eliminate class imbalance
+        sample_weights = [1.0 / class_counts[label] for _, label in full_train_dataset.samples]
+        sampler = torch.utils.data.WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler, num_workers=0)
     else:
         random.seed(42)
         selected_indices = []
@@ -103,10 +108,9 @@ def train_bone_model(epochs: int = 2, batch_size: int = 32, lr: float = 1.5e-4, 
             print(f"  Class '{classes[label]}': {cnt} training samples selected")
         train_dataset = Subset(full_train_dataset, selected_indices)
         print(f"Total Selected Training Samples: {len(train_dataset)}")
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
     print(f"Total Test Validation Radiographs: {len(test_dataset)}")
-
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
     # Pretrained MobileNetV2
@@ -215,6 +219,7 @@ def train_bone_model(epochs: int = 2, batch_size: int = 32, lr: float = 1.5e-4, 
 
     # Automatically re-run evaluation
     try:
+        sys.path.insert(0, PROJECT_ROOT)
         from model.bone.evaluate_bone import evaluate_bone
         print("\nUpdating clinical performance report & confusion matrix plots...")
         res = evaluate_bone()
