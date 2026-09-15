@@ -8,7 +8,6 @@ and automatically prepares them in the directory format expected by
 the training pipelines:
   - Chest (Pneumonia): dataset/chest_xray/{train,val,test}/{NORMAL,PNEUMONIA}
   - Bone (Fracture):   dataset/bone_xray/{images,labels}/{train,val,test}
-  - Dental (Pathology): dataset/dental_xray/{images,labels}/{train,val,test}
 
 Usage:
   python dataset/download_datasets.py --dataset chest
@@ -40,15 +39,6 @@ DATASET_SOURCES = {
         "alt_url": "https://www.kaggle.com/datasets/ahmedhamada0/fracatlas",
         "target_dir": os.path.join(DATASET_DIR, "bone_xray"),
         "train_cmd": "python model/bone/train_bone_yolo.py"
-    },
-    "dental": {
-        "name": "Dental Panoramic Radiographs",
-        "slug": "clmentbisaillon/panoramic-dental-xrays",
-        "alt_slug": "truthisoutthere/dentex-challenge-2023",
-        "url": "https://www.kaggle.com/datasets/clmentbisaillon/panoramic-dental-xrays",
-        "alt_url": "https://www.kaggle.com/datasets/truthisoutthere/dentex-challenge-2023",
-        "target_dir": os.path.join(DATASET_DIR, "dental_xray"),
-        "train_cmd": "python model/dental/train_dental_yolo.py"
     }
 }
 
@@ -218,43 +208,6 @@ def download_bone_dataset(force: bool = False):
     print(f"\n[+] Bone dataset ready! Run: {info['train_cmd']}")
     return True
 
-def download_dental_dataset(force: bool = False):
-    """Downloads dental panoramic radiograph dataset."""
-    info = DATASET_SOURCES["dental"]
-    target_dir = info["target_dir"]
-    file_count = get_dir_file_count(target_dir)
-
-    print("=" * 68)
-    print(f"   CHECKING / DOWNLOADING {info['name'].upper()}")
-    print(f"   Target: {target_dir}")
-    print("=" * 68)
-
-    if file_count > 50 and not force:
-        print(f"\n[+] Dental dataset is ALREADY present! ({file_count} files found)")
-        print(f"You can train the Dental model by running: {info['train_cmd']}")
-        return True
-
-    try:
-        import kagglehub
-    except ImportError:
-        print("[Error] kagglehub is required. Install it using: pip install kagglehub")
-        return False
-
-    os.makedirs(target_dir, exist_ok=True)
-    print(f"\n[*] Contacting Kaggle to download {info['slug']} ...")
-    try:
-        raw_path = kagglehub.dataset_download(info["slug"])
-        print(f"[+] Download complete at cache: {raw_path}")
-    except Exception as e:
-        print(f"\n[Error] Download failed: {e}")
-        show_auth_help("dental")
-        return False
-
-    print("[*] Copying files to dataset/dental_xray/ ...")
-    shutil.copytree(raw_path, target_dir, dirs_exist_ok=True)
-    print(f"\n[+] Dental dataset ready! Run: {info['train_cmd']}")
-    return True
-
 def create_quick_test_dataset(modality: str = "all"):
     """Creates tiny, lightweight test datasets for immediate training verification."""
     print("=" * 68)
@@ -334,52 +287,15 @@ def create_quick_test_dataset(modality: str = "all"):
                             lf.write("0 0.41 0.54 0.24 0.08\n")
         print("    [+] Bone YOLOv8 quick-test ready. Run: python model/bone/train_bone_yolo.py")
 
-    # --- 3. DENTAL (YOLOv8 Detection) ---
-    if modality in ["all", "dental"]:
-        print("[*] Creating mini Dental YOLOv8 dataset (images + labels)...")
-        dental_dir = os.path.join(DATASET_DIR, "dental_xray")
-        for split, count in [("train", 12), ("val", 4), ("test", 4)]:
-            img_dir = os.path.join(dental_dir, "images", split)
-            lbl_dir = os.path.join(dental_dir, "labels", split)
-            os.makedirs(img_dir, exist_ok=True)
-            os.makedirs(lbl_dir, exist_ok=True)
-
-            for i in range(count):
-                img_path = os.path.join(img_dir, f"sample_dental_{split}_{i+1}.png")
-                lbl_path = os.path.join(lbl_dir, f"sample_dental_{split}_{i+1}.txt")
-                if not os.path.exists(img_path):
-                    d_img = Image.new("RGB", (400, 220), color=(25, 25, 30))
-                    draw = ImageDraw.Draw(d_img)
-                    draw.arc([50, 60, 350, 250], start=180, end=360, fill=(160, 165, 175), width=25)
-                    for t in range(8):
-                        tx = 80 + t * 30
-                        draw.rounded_rectangle([tx, 95, tx + 14, 115], radius=3, fill=(210, 215, 225))
-                        draw.rounded_rectangle([tx, 125, tx + 14, 145], radius=3, fill=(210, 215, 225))
-                    has_caries = (i % 2 == 0)
-                    if has_caries:
-                        draw.ellipse([172, 130, 182, 140], fill=(40, 40, 45))
-                    d_img.save(img_path)
-
-                if not os.path.exists(lbl_path):
-                    with open(lbl_path, "w") as lf:
-                        # Add healthy teeth (class 0)
-                        for t in range(4):
-                            norm_x = (90 + t * 60) / 400.0
-                            lf.write(f"0 {norm_x:.2f} 0.50 0.05 0.12\n")
-                        if i % 2 == 0:
-                            # Class 1: Caries
-                            lf.write("1 0.44 0.61 0.04 0.06\n")
-        print("    [+] Dental YOLOv8 quick-test ready. Run: python model/dental/train_dental_yolo.py")
-
     print("\n[+] Quick-test generation complete!\n")
 
 def main():
     parser = argparse.ArgumentParser(description="RadiVision AI Dataset Acquisition Utility")
     parser.add_argument(
         "--dataset",
-        choices=["chest", "bone", "dental", "all"],
+        choices=["chest", "bone", "all"],
         default="status",
-        help="Specify which dataset to download (chest, bone, dental, all)"
+        help="Specify which dataset to download (chest, bone, all)"
     )
     parser.add_argument("--status", action="store_true", help="Display dataset availability status")
     parser.add_argument("--login", action="store_true", help="Authenticate with your Kaggle account")
@@ -398,12 +314,9 @@ def main():
         download_chest_dataset(force=args.force)
     elif args.dataset == "bone":
         download_bone_dataset(force=args.force)
-    elif args.dataset == "dental":
-        download_dental_dataset(force=args.force)
     elif args.dataset == "all":
         download_chest_dataset(force=args.force)
         download_bone_dataset(force=args.force)
-        download_dental_dataset(force=args.force)
     else:
         show_dataset_status()
 

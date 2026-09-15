@@ -79,7 +79,6 @@ def predict_bone_image(image_path: str, generate_overlay: bool = True):
             body_region = "Extremity / Intact Cortices"
             findings = [{
                 "label": "Intact Bony Cortices",
-                "tooth_number": None,
                 "confidence": confidence,
                 "bbox_x": None,
                 "bbox_y": None,

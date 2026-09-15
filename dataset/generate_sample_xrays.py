@@ -2,10 +2,9 @@
 generate_sample_xrays.py
 ------------------------
 Utility script to generate synthetic sample radiographs for demonstration
-and verification testing of RadiVision AI across all three modalities:
+and verification testing of RadiVision AI across all supported modalities:
   1. sample_chest_xray.png (Chest view with simulated lung fields and ribs)
   2. sample_bone_xray.png (Bone view with distal radius fracture simulation)
-  3. sample_dental_xray.png (Panoramic dental view with mandibular arch & teeth)
 """
 
 import os
@@ -59,34 +58,6 @@ def generate_samples():
     bone_path = os.path.join(SAMPLES_DIR, "sample_bone_xray.png")
     bone_img.save(bone_path)
     print(f"  [+] Created: {bone_path}")
-
-    # 3. Dental Panoramic Radiograph (800 x 440 - typical wide panoramic aspect)
-    dental_img = Image.new("RGB", (800, 440), color=(25, 25, 30))
-    d_draw = ImageDraw.Draw(dental_img)
-
-    # Mandibular jawbone arch
-    d_draw.arc([100, 120, 700, 500], start=180, end=360, fill=(160, 165, 175), width=45)
-
-    # Maxillary arch
-    d_draw.arc([140, 40, 660, 360], start=180, end=360, fill=(150, 155, 165), width=35)
-
-    # Teeth rows (simulating 16 upper & 16 lower teeth)
-    for i in range(16):
-        tx = 160 + i * 30
-        ty_up = 165 + int(abs(i - 7.5) * 4)
-        ty_dn = 205 + int(abs(i - 7.5) * 4)
-        # Upper tooth
-        d_draw.rounded_rectangle([tx, ty_up, tx + 22, ty_up + 32], radius=4, fill=(210, 215, 225))
-        # Lower tooth
-        d_draw.rounded_rectangle([tx, ty_dn, tx + 22, ty_dn + 32], radius=4, fill=(210, 215, 225))
-
-    # Caries radiolucency on lower left first molar (Tooth #36)
-    d_draw.ellipse([345, 212, 355, 224], fill=(40, 40, 45))
-
-    dental_img = dental_img.filter(ImageFilter.GaussianBlur(radius=2))
-    dental_path = os.path.join(SAMPLES_DIR, "sample_dental_xray.png")
-    dental_img.save(dental_path)
-    print(f"  [+] Created: {dental_path}")
 
     print("\nDemonstration radiographs ready for testing.")
 

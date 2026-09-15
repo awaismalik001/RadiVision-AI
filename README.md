@@ -1,6 +1,6 @@
 # Intelligent X-Ray Image Analysis & Abnormality Detection System
 
-### A Multi-Modal Deep Learning Desktop Application for Automated Chest (Pneumonia), Bone (Fracture), and Dental (Panoramic) Abnormality Detection
+### A Multi-Modal Deep Learning Desktop Application for Automated Chest (Pneumonia) and Bone (Fracture) Abnormality Detection
 
 **System Information**
 - **Application:** RadiVision AI
@@ -11,11 +11,10 @@
 ---
 
 ## 1. Overview
-The **Intelligent X-Ray Image Analysis & Abnormality Detection System** is a medical decision-support desktop application designed to screen and triage three primary plain radiograph modalities:
+The **Intelligent X-Ray Image Analysis & Abnormality Detection System** is a medical decision-support desktop application designed to screen and triage two primary plain radiograph modalities:
 1. **Chest X-Rays:** Detection and binary classification of **Pneumonia** vs. **Normal** using MobileNetV2 transfer learning.
 2. **Bone X-Rays:** Object detection and localization of **Fractures** with body-region categorization using YOLOv8.
-3. **Dental Panoramic X-Rays:** Object detection and localization of **Dental Pathologies** (caries, deep caries, periapical lesions) mapped to the **FDI Two-Digit Tooth Numbering System** (11–48) using YOLOv8.
-4. **Modality Triage:** An automated 3-class CNN that classifies incoming scans as Chest, Bone, or Dental with real-time clinician confirmation or manual override.
+3. **Modality Triage:** An automated 2-class CNN that classifies incoming scans as Chest or Bone with real-time clinician confirmation or manual override.
 
 ---
 
@@ -77,14 +76,7 @@ python train_bone_yolo.py
 # Exports: model/bone/bone_fracture_model.pt
 ```
 
-### C. Dental Abnormality Model (YOLOv8 & FDI)
-```bash
-cd model/dental
-python train_dental_yolo.py
-# Exports: model/dental/dental_xray_model.pt
-```
-
-### D. Modality Classifier (3-Class CNN)
+### C. Modality Classifier (2-Class CNN)
 ```bash
 cd model/type_classifier
 python train_type_classifier.py
@@ -98,7 +90,7 @@ python train_type_classifier.py
 xray_ai_project/
 ├── app/                  # Desktop application source code (PyQt5, DB, Auth, Engine)
 ├── database/             # Persistent SQLite database (xray_system.db)
-├── dataset/              # Training datasets for Chest, Bone, Dental, and Modality
+├── dataset/              # Training datasets for Chest, Bone, and Modality
 ├── logs/                 # System and audit event logs (app.log)
 ├── model/                # Training scripts and exported weights (.h5, .pt)
 ├── reports/              # Auto-generated clinical PDF reports

@@ -66,7 +66,7 @@ class DatabaseManager:
                     scan_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     patient_id INTEGER NOT NULL,
                     user_id INTEGER NOT NULL,
-                    scan_type TEXT CHECK(scan_type IN ('Chest', 'Bone', 'Dental')) NOT NULL,
+                    scan_type TEXT CHECK(scan_type IN ('Chest', 'Bone')) NOT NULL,
                     body_region TEXT,
                     prediction TEXT NOT NULL,
                     confidence REAL NOT NULL,
@@ -78,13 +78,12 @@ class DatabaseManager:
                 );
             """)
 
-            # 4. Findings Table (supports 1-to-many detections for Bone and Dental)
+            # 4. Findings Table (supports 1-to-many detections for Bone)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS findings (
                     finding_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     scan_id INTEGER NOT NULL,
                     label TEXT NOT NULL,
-                    tooth_number TEXT,
                     confidence REAL NOT NULL,
                     bbox_x REAL,
                     bbox_y REAL,
@@ -212,15 +211,15 @@ class DatabaseManager:
             cursor.execute("UPDATE scans SET annotated_image_path = ? WHERE scan_id = ?;", (annotated_path, scan_id))
             conn.commit()
 
-    def create_finding(self, scan_id: int, label: str, tooth_number: Optional[str],
+    def create_finding(self, scan_id: int, label: str,
                        confidence: float, bbox_x: Optional[float] = None, bbox_y: Optional[float] = None,
                        bbox_w: Optional[float] = None, bbox_h: Optional[float] = None) -> int:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO findings (scan_id, label, tooth_number, confidence, bbox_x, bbox_y, bbox_w, bbox_h)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-            """, (scan_id, label, tooth_number, float(confidence), bbox_x, bbox_y, bbox_w, bbox_h))
+                INSERT INTO findings (scan_id, label, confidence, bbox_x, bbox_y, bbox_w, bbox_h)
+                VALUES (?, ?, ?, ?, ?, ?, ?);
+            """, (scan_id, label, float(confidence), bbox_x, bbox_y, bbox_w, bbox_h))
             conn.commit()
             return cursor.lastrowid
 
@@ -304,7 +303,7 @@ class DatabaseManager:
             cursor.execute(f"SELECT COUNT(*) FROM scans {user_filter};", params)
             total_scans = cursor.fetchone()[0]
 
-            cursor.execute(f"SELECT COUNT(*) FROM scans {user_filter} {'AND' if user_filter else 'WHERE'} prediction LIKE '%Abnormal%' OR prediction LIKE '%Pneumonia%' OR prediction LIKE '%Fracture%' OR prediction LIKE '%Caries%';", params)
+            cursor.execute(f"SELECT COUNT(*) FROM scans {user_filter} {'AND' if user_filter else 'WHERE'} prediction LIKE '%Abnormal%' OR prediction LIKE '%Pneumonia%' OR prediction LIKE '%Fracture%';", params)
             abnormal_scans = cursor.fetchone()[0]
 
             cursor.execute(f"SELECT COUNT(*) FROM scans {user_filter} {'AND' if user_filter else 'WHERE'} prediction LIKE '%Normal%' OR prediction LIKE '%Healthy%';", params)
@@ -352,3 +351,34 @@ class DatabaseManager:
 
 # Global singleton instance
 db = DatabaseManager()
+
+def init_db():
+    """Initializes the database schema and seeds default data."""
+    db.init_database()
+
+def save_scan(patient_name: str, patient_age: int, patient_gender: str, scan_type: str,
+              image_path: str, prediction: str, confidence: float, body_region: Optional[str] = None,
+              annotated_image_path: Optional[str] = None, patient_national_id: Optional[str] = None,
+              user_id: int = 1) -> int:
+    """Convenience helper to register a patient and scan record."""
+    patient_id = db.create_patient(patient_name, patient_age, patient_gender, contact=patient_national_id or "")
+    scan_id = db.create_scan(patient_id=patient_id, user_id=user_id, scan_type=scan_type,
+                             body_region=body_region, prediction=prediction, confidence=confidence,
+                             raw_image_path=image_path, annotated_image_path=annotated_image_path)
+    return scan_id
+
+def save_finding(scan_id: int, label: str, confidence: float,
+                 bbox_x: Optional[float] = None, bbox_y: Optional[float] = None,
+                 bbox_w: Optional[float] = None, bbox_h: Optional[float] = None,
+                 tooth_number: Optional[str] = None) -> int:
+    """Convenience helper to record a detected bounding box finding."""
+    return db.create_finding(scan_id, label, confidence, bbox_x, bbox_y, bbox_w, bbox_h)
+
+def get_all_scans(limit: int = 200) -> List[Dict[str, Any]]:
+    """Retrieves all past scans across all patients."""
+    return db.get_scans(user_id=None, limit=limit)
+
+def get_scan_by_id(scan_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieves full scan details including findings."""
+    return db.get_scan_details(scan_id)
+

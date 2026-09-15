@@ -5,7 +5,7 @@ Automated system verification suite for RadiVision AI.
 Validates:
   1. SQLite 3NF relational database schema & default Admin seed
   2. Bcrypt authentication & session tracking
-  3. Modality detection, Chest inference, Bone inference, and Dental inference
+  3. Modality detection, Chest inference, and Bone inference
   4. OpenCV bounding-box overlay compositing
   5. ReportLab PDF clinical report compilation
   6. PyQt5 GUI components initialization
@@ -35,12 +35,10 @@ def run_verification():
         generate_samples()
         chest_sample = os.path.join(SAMPLES_DIR, "sample_chest_xray.png")
         bone_sample = os.path.join(SAMPLES_DIR, "sample_bone_xray.png")
-        dental_sample = os.path.join(SAMPLES_DIR, "sample_dental_xray.png")
 
         assert os.path.exists(chest_sample), "Chest sample missing"
         assert os.path.exists(bone_sample), "Bone sample missing"
-        assert os.path.exists(dental_sample), "Dental sample missing"
-        print("  -> PASSED: All 3 sample radiographs generated successfully.")
+        print("  -> PASSED: All sample radiographs generated successfully.")
         passed_tests += 1
     except Exception as e:
         print(f"  -> FAILED: {e}")
@@ -89,32 +87,28 @@ def run_verification():
     except Exception as e:
         print(f"  -> FAILED: {e}")
 
-    # Test 4: AI Model Engine (Modality Triage + 3 Inference Pipelines)
-    print("\n[Test 4/6] Verifying AI Inference Engine across All 3 Modalities...")
+    # Test 4: AI Model Engine (Modality Triage + 2 Inference Pipelines)
+    print("\n[Test 4/6] Verifying AI Inference Engine across Both Modalities...")
     try:
         from app.model_engine import ai_engine
 
         # Modality detection
         mod_chest, conf_c = ai_engine.detect_modality(chest_sample)
         mod_bone, conf_b = ai_engine.detect_modality(bone_sample)
-        mod_dental, conf_d = ai_engine.detect_modality(dental_sample)
 
-        print(f"  Modality Triage -> Chest: {mod_chest} ({conf_c*100:.1f}%), Bone: {mod_bone} ({conf_b*100:.1f}%), Dental: {mod_dental} ({conf_d*100:.1f}%)")
+        print(f"  Modality Triage -> Chest: {mod_chest} ({conf_c*100:.1f}%), Bone: {mod_bone} ({conf_b*100:.1f}%)")
 
         # Modality Inferences
         res_chest = ai_engine.predict_chest(chest_sample)
         res_bone = ai_engine.predict_bone(bone_sample)
-        res_dental = ai_engine.predict_dental(dental_sample)
 
         assert "prediction" in res_chest and len(res_chest["findings"]) > 0
         assert "prediction" in res_bone and len(res_bone["findings"]) > 0
-        assert "prediction" in res_dental and len(res_dental["findings"]) > 0
 
         print(f"  Chest Inference  : {res_chest['prediction']} (Conf: {res_chest['confidence']*100:.1f}%)")
         print(f"  Bone Inference   : {res_bone['prediction']} (Conf: {res_bone['confidence']*100:.1f}%)")
-        print(f"  Dental Inference : {res_dental['prediction']} (Conf: {res_dental['confidence']*100:.1f}%)")
 
-        print("  -> PASSED: AI model pipelines operational for Chest, Bone, and Dental.")
+        print("  -> PASSED: AI model pipelines operational for Chest and Bone.")
         passed_tests += 1
     except Exception as e:
         print(f"  -> FAILED: {e}")
@@ -125,11 +119,11 @@ def run_verification():
         from app.detection_overlay import draw_findings_overlay
 
         annotated_path = draw_findings_overlay(
-            dental_sample,
-            res_dental["findings"],
-            "Dental",
-            res_dental["prediction"],
-            res_dental["confidence"]
+            bone_sample,
+            res_bone["findings"],
+            "Bone",
+            res_bone["prediction"],
+            res_bone["confidence"]
         )
 
         assert os.path.exists(annotated_path), "Annotated image output file not generated"
@@ -149,19 +143,18 @@ def run_verification():
         s_id = db.create_scan(
             patient_id=p_id,
             user_id=1,
-            scan_type="Dental",
-            body_region="Mandibular Panoramic",
-            prediction=res_dental["prediction"],
-            confidence=res_dental["confidence"],
-            raw_image_path=dental_sample,
+            scan_type="Bone",
+            body_region="Wrist (Distal Radius)",
+            prediction=res_bone["prediction"],
+            confidence=res_bone["confidence"],
+            raw_image_path=bone_sample,
             annotated_image_path=annotated_path
         )
 
-        for f in res_dental["findings"]:
+        for f in res_bone["findings"]:
             db.create_finding(
                 scan_id=s_id,
                 label=f["label"],
-                tooth_number=f.get("tooth_number"),
                 confidence=f["confidence"],
                 bbox_x=f.get("bbox_x"),
                 bbox_y=f.get("bbox_y"),

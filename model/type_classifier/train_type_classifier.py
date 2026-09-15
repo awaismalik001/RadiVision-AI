@@ -1,8 +1,8 @@
 """
 train_type_classifier.py
 -------------------------
-Trains a lightweight 3-class CNN to automatically classify incoming radiographs
-into anatomical modalities: Chest, Bone, or Dental.
+Trains a lightweight 2-class CNN to automatically classify incoming radiographs
+into anatomical modalities: Chest or Bone.
 """
 
 import os
@@ -34,7 +34,7 @@ def build_classifier():
         layers.GlobalAveragePooling2D(),
         layers.Dense(128, activation='relu'),
         layers.Dropout(0.3),
-        layers.Dense(3, activation='softmax')  # 3 classes: Bone, Chest, Dental
+        layers.Dense(2, activation='softmax')  # 2 classes: Chest, Bone
     ])
 
     model.compile(
@@ -47,7 +47,7 @@ def build_classifier():
 def train():
     if not os.path.exists(DATASET_DIR):
         print(f"[Error] Modality dataset directory not found at: {DATASET_DIR}")
-        print("Please ensure dataset/xray_type contains 'chest', 'bone', and 'dental' subfolders.")
+        print("Please ensure dataset/xray_type contains 'chest' and 'bone' subfolders.")
         return
 
     datagen = ImageDataGenerator(

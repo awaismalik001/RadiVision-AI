@@ -173,7 +173,6 @@ def localize_bone_fracture(
 
     return {
         "label": label,
-        "tooth_number": None,
         "confidence": round(float(confidence), 4),
         "bbox_x": round(float(bbox_x), 3),
         "bbox_y": round(float(bbox_y), 3),

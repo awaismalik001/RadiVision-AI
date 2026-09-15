@@ -80,7 +80,6 @@ def predict_xray(image_path: str, generate_overlay: bool = True):
                 body_region = "Thoracic (Normal Lung Fields)"
                 findings = [{
                     "label": "Clear Pulmonary Parenchyma",
-                    "tooth_number": None,
                     "confidence": confidence,
                     "bbox_x": None,
                     "bbox_y": None,

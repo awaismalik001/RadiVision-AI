@@ -1,5 +1,5 @@
 # Intelligent X-Ray Image Analysis & Abnormality Detection System
-### A Multi-Modal Deep Learning Desktop Application for Automated Chest (Pneumonia), Bone (Fracture), and Dental (Panoramic) Abnormality Detection
+### A Multi-Modal Deep Learning Desktop Application for Automated Chest (Pneumonia) and Bone (Fracture) Abnormality Detection
 
 ---
 
@@ -18,10 +18,9 @@
 
 ## Executive Summary
 
-The **Intelligent X-Ray Image Analysis & Abnormality Detection System** is an end-to-end clinical decision-support desktop application designed to triage and analyze three primary diagnostic radiograph modalities:
+The **Intelligent X-Ray Image Analysis & Abnormality Detection System** is an end-to-end clinical decision-support desktop application designed to triage and analyze two primary diagnostic radiograph modalities:
 1. **Chest Radiographs:** Automated classification of **Pneumonia** versus **Normal** pulmonary parenchyma using a fine-tuned MobileNetV2 deep convolutional neural network.
 2. **Musculoskeletal (Bone) Radiographs:** Automated spatial localization of **Fractures** with body-region categorization (e.g., wrist, forearm, elbow) using YOLOv8 object detection.
-3. **Dental Panoramic Radiographs:** Automated per-tooth localization and pathology classification (caries, deep caries, periapical lesions) utilizing YOLOv8 mapped to the standard **FDI Two-Digit Tooth Numbering System**.
 
 The platform is integrated into a unified desktop application built on **PyQt5**, backed by a local **SQLite** relational database with strict role-based access control (**Admin** vs. **Clinician/User**), encrypted authentication using **bcrypt**, real-time bounding box compositing via **OpenCV**, and automated PDF diagnostic report generation powered by **ReportLab**.
 
@@ -41,8 +40,7 @@ The platform is integrated into a unified desktop application built on **PyQt5**
 5. [Dataset Specifications](#5-dataset-specifications)
    - 5.1 Chest Radiography Dataset (Pneumonia)
    - 5.2 Bone Radiography Dataset (Fractures & Trauma)
-   - 5.3 Dental Panoramic Radiography Dataset (Pathology & FDI Numbering)
-   - 5.4 Modality Classification Dataset (Triage)
+   - 5.3 Modality Classification Dataset (Triage)
 6. [Proposed System Architecture](#6-proposed-system-architecture)
    - 6.1 Multi-Stage Pipeline
    - 6.2 Architectural Flowchart
@@ -50,9 +48,8 @@ The platform is integrated into a unified desktop application built on **PyQt5**
    - 7.1 Ingestion & Resolution Invariance
    - 7.2 Chest Classification Model (MobileNetV2 CNN)
    - 7.3 Bone Fracture Detection Model (YOLOv8)
-   - 7.4 Dental Pathology Detection Model (YOLOv8 & FDI Notation)
-   - 7.5 Modality Auto-Detection Classifier
-   - 7.6 Training Configurations & Hyperparameters
+   - 7.4 Modality Auto-Detection Classifier
+   - 7.5 Training Configurations & Hyperparameters
 8. [Application Modules Breakdown](#8-application-modules-breakdown)
 9. [Relational Database Design (SQLite)](#9-relational-database-design-sqlite)
    - 9.1 Entity Relationship Model
@@ -85,15 +82,13 @@ The platform is integrated into a unified desktop application built on **PyQt5**
 
 Medical projection radiography remains the foundational, most accessible diagnostic imaging modality in contemporary healthcare. However, the diagnostic throughput of medical centers is severely constrained by a global shortage of certified radiologists, leading to diagnostic backlogs, physician fatigue, and potential delays in critical interventions.
 
-This project delivers the **Intelligent X-Ray Image Analysis & Abnormality Detection System**, an AI-driven desktop application engineered to streamline radiological assessment across three high-volume domains:
+This project delivers the **Intelligent X-Ray Image Analysis & Abnormality Detection System**, an AI-driven desktop application engineered to streamline radiological assessment across two high-volume domains:
 - **Pneumonia detection** from chest X-rays.
 - **Fracture localization** from skeletal bone X-rays.
-- **Dental pathology detection** (caries, lesions) from panoramic dental X-rays.
 
-The core architecture introduces a multi-stage intelligent routing pipeline. When a radiograph of arbitrary resolution is uploaded, an automated 3-class modality classifier identifies the anatomical category with a confidence metric and allows immediate clinician confirmation or override. The radiograph is then routed to dedicated AI models:
+The core architecture introduces a multi-stage intelligent routing pipeline. When a radiograph of arbitrary resolution is uploaded, an automated 2-class modality classifier identifies the anatomical category with a confidence metric and allows immediate clinician confirmation or override. The radiograph is then routed to dedicated AI models:
 - A transfer learning **MobileNetV2** deep convolutional network for chest pneumonia classification.
 - A **YOLOv8** object detector trained on the FracAtlas and GRAZPEDWRI-DX datasets for bone fracture localization and body-region tagging.
-- A specialized **YOLOv8** model trained on the DENTEX panoramic dataset for tooth enumeration and pathology identification using the FDI numbering standard.
 
 The application is deployed as a standalone desktop executable using **PyQt5**, integrated with a local **SQLite** relational database featuring user data partitioning, salted **bcrypt** password encryption, **OpenCV** bounding box rendering, and automated clinical **ReportLab** PDF report generation.
 
@@ -102,7 +97,7 @@ The application is deployed as a standalone desktop executable using **PyQt5**, 
 ## 2. Introduction & Problem Formulation
 
 ### 2.1 Problem Statement
-In emergency departments, outpatient clinics, and rural medical centers, general practitioners are routinely required to interpret radiographs under intense time pressures without on-demand access to specialized radiologists. Diagnostic oversight in plain radiography—such as subtle non-displaced fractures, early-stage lobar pneumonia, or occult dental root lesions—can precipitate rapid clinical deterioration and increase morbidity. There is a pressing clinical need for an intelligent decision-support application that acts as an assistive "second pair of eyes", automatically triaging incoming studies, flagging abnormal regions, and compiling standardized diagnostic records.
+In emergency departments, outpatient clinics, and rural medical centers, general practitioners are routinely required to interpret radiographs under intense time pressures without on-demand access to specialized radiologists. Diagnostic oversight in plain radiography—such as subtle non-displaced fractures or early-stage lobar pneumonia—can precipitate rapid clinical deterioration and increase morbidity. There is a pressing clinical need for an intelligent decision-support application that acts as an assistive "second pair of eyes", automatically triaging incoming studies, flagging abnormal regions, and compiling standardized diagnostic records.
 
 ### 2.2 Motivation
 Artificial intelligence, particularly deep learning via Convolutional Neural Networks (CNNs) and single-stage object detectors (YOLO), has achieved diagnostic benchmarks comparable to expert clinicians in controlled medical studies. The motivation of this project is to take these cutting-edge algorithms out of theoretical research environments and package them into a practical, secure, offline-capable desktop application. This project unites essential computer science domains—deep learning, computer vision, relational databases, desktop UI engineering, and cryptography—into a cohesive, production-grade clinical tool.
@@ -111,11 +106,10 @@ Artificial intelligence, particularly deep learning via Convolutional Neural Net
 The specific, measurable objectives of this project are:
 1. **Chest Subsystem:** Design, train, and evaluate a transfer-learning CNN (MobileNetV2) capable of classifying chest radiographs as **Normal** or **Pneumonia** with high sensitivity and specificity.
 2. **Bone Subsystem:** Train and deploy a **YOLOv8** object detection model to detect, bound, and classify musculoskeletal fractures while categorizing the anatomical body region.
-3. **Dental Subsystem:** Train and deploy a **YOLOv8** object detection model on panoramic dental radiographs to detect dental pathologies (caries, periapical lesions, impactions) indexed by FDI two-digit tooth numbers.
-4. **Modality Triaging:** Develop an automated, lightweight 3-class CNN that accurately routes uploaded radiographs to their respective specialized model pipelines.
-5. **Desktop User Interface:** Construct a responsive, modern graphical user interface using **PyQt5** styled with a clinical design system.
-6. **Relational Data Management & Security:** Implement an ACID-compliant **SQLite** database supporting role-based access control (Admin vs. Clinician), bcrypt password hashing, and user-isolated patient history tracking.
-7. **Clinical Report Generation:** Implement an automated module utilizing **ReportLab** to generate exportable, print-ready PDF diagnostic summaries containing patient demographics, high-resolution annotated radiographs, and structured finding tables.
+3. **Modality Triaging:** Develop an automated, lightweight 2-class CNN that accurately routes uploaded radiographs to their respective specialized model pipelines.
+4. **Desktop User Interface:** Construct a responsive, modern graphical user interface using **PyQt5** styled with a clinical design system.
+5. **Relational Data Management & Security:** Implement an ACID-compliant **SQLite** database supporting role-based access control (Admin vs. Clinician), bcrypt password hashing, and user-isolated patient history tracking.
+6. **Clinical Report Generation:** Implement an automated module utilizing **ReportLab** to generate exportable, print-ready PDF diagnostic summaries containing patient demographics, high-resolution annotated radiographs, and structured finding tables.
 
 ---
 
@@ -127,13 +121,12 @@ The specific, measurable objectives of this project are:
 +----------------------------------------------------+------------------------------------+
 |                    IN-SCOPE                        |            OUT-OF-SCOPE            |
 +----------------------------------------------------+------------------------------------+
-| - Automatic 3-class X-ray modality detection       | - Cloud hosting or web SaaS        |
-|   (Chest / Bone / Dental) with manual override     |   deployment (runs fully offline)  |
+| - Automatic 2-class X-ray modality detection       | - Cloud hosting or web SaaS        |
+|   (Chest / Bone) with manual override              |   deployment (runs fully offline)  |
 | - Chest Pneumonia binary classification            | - Multi-class chest differential   |
 | - Bone fracture localization with body region tags |   (COVID-19, TB, lung nodules)     |
-| - Dental pathology detection with FDI numbering    | - 3D CT, MRI, or ultrasound data   |
-| - OpenCV bounding-box & label rendering            | - Full PACS/DICOM network servers  |
-| - Local SQLite relational database with CRUD       |   (DIMSE C-STORE / C-MOVE)         |
+| - OpenCV bounding-box & label rendering            | - 3D CT, MRI, or ultrasound data   |
+| - Local SQLite relational database with CRUD       | - Full PACS/DICOM network servers  |
 | - Role-based authentication (Admin & Clinician)    | - Automated drug prescribing or    |
 | - Automated clinical PDF report generation         |   therapeutic management           |
 | - Input dimension invariance (any image size)      | - Hardware-accelerated embedded    |
@@ -145,7 +138,7 @@ The specific, measurable objectives of this project are:
 
 ## 4. Related Work & Literature Review
 
-Deep learning in plain radiography has evolved rapidly across three distinct clinical specialties:
+Deep learning in plain radiography has evolved rapidly across two distinct clinical specialties:
 
 ### 4.1 Chest Radiography Literature
 Rajpurkar et al. (2017) introduced **CheXNet**, a 121-layer DenseNet trained on the NIH ChestX-ray14 dataset (over 100,000 frontal radiographs), demonstrating that deep CNNs could exceed the average diagnostic sensitivity of board-certified radiologists in pneumonia detection. Kermany et al. (2018) established the efficacy of transfer learning using ImageNet-pretrained convolutional backbones (such as Inception and MobileNet) for pediatric pneumonia detection on Kaggle's Guangzhou Women and Children's Medical Center dataset. Their findings demonstrated that fine-tuning pre-trained representations enables high diagnostic accuracy without requiring millions of clinical training samples.
@@ -153,14 +146,9 @@ Rajpurkar et al. (2017) introduced **CheXNet**, a 121-layer DenseNet trained on 
 ### 4.2 Musculoskeletal Fracture Detection Literature
 Rajpurkar et al. (2018) published the **MURA** (Musculoskeletal Radiographs) benchmark, containing 40,561 upper-extremity radiographs across seven anatomical regions (finger, wrist, forearm, elbow, humerus, shoulder, hand). More recently, Kabir et al. (2023) developed **FracAtlas**, a comprehensively annotated multi-region fracture dataset providing exact spatial bounding boxes for fracture classification, localization, and segmentation. Complementing this, Nagy et al. (2022) released the **GRAZPEDWRI-DX** pediatric trauma dataset, demonstrating the effectiveness of one-stage object detectors (YOLO series) in detecting subtle pediatric wrist fractures.
 
-### 4.3 Dental Panoramic Radiography Literature
-Panoramic dental radiography involves complex anatomical structures with high visual overlap. The **DENTEX Challenge Consortium** (2023) released a standardized benchmark for tooth enumeration and pathology diagnosis on panoramic radiographs. Utilizing the **FDI (Fédération Dentaire Internationale)** two-digit numbering system, researchers proved that modified YOLOv8 architectures can simultaneously detect individual tooth boundaries and classify pathologies such as dental caries, periapical lesions, and tooth impactions with high spatial precision.
-
----
-
 ## 5. Dataset Specifications
 
-Each of the three diagnostic tasks, plus the modality triaging stage, utilizes a dedicated medical dataset:
+Each of the two diagnostic tasks, plus the modality triaging stage, utilizes a dedicated medical dataset:
 
 ```
 +--------------------------------------------------------------------------------------------------+
@@ -175,12 +163,8 @@ Each of the three diagnostic tasks, plus the modality triaging stage, utilizes a
 |    (Object Detect)  | GRAZPEDWRI-DX Pediatric Wrist | Images (YOLO TXT)  | Fractures, Wrist,     |
 |                     | + MURA (Supplementary)        |                    | Forearm, Elbow, Hand  |
 +---------------------+-------------------------------+--------------------+-----------------------+
-| 3. Dental Pathologies| DENTEX Challenge Panoramic   | 1,500+ High-Res    | Bounding Boxes +      |
-|    (Object Detect)  | Dental Radiographs            | Panoramic (YOLO TXT)| FDI Tooth (11-48),    |
-|                     |                               |                    | Caries, Periapical    |
-+---------------------+-------------------------------+--------------------+-----------------------+
-| 4. Modality Triage  | Balanced Stratified Sample    | 4,500 Images       | 3 Classes:            |
-|    (Classification) | from Chest, Bone, and Dental  | (1,500 per class)  | Chest, Bone, Dental   |
+| 3. Modality Triage  | Balanced Stratified Sample    | 3,000 Images       | 2 Classes:            |
+|    (Classification) | from Chest and Bone           | (1,500 per class)  | Chest, Bone           |
 +---------------------+-------------------------------+--------------------+-----------------------+
 ```
 
@@ -207,23 +191,21 @@ The application adopts a modular, sequential pipeline architecture. The complete
                                     v
                   +-----------------------------------+
                   |   Automated Modality Classifier   |
-                  |      (3-Class Lightweight CNN)    |
+                  |      (2-Class Lightweight CNN)    |
                   +-----------------+-----------------+
                                     |
                   [Display Detected Modality & Confidence]
                   [Clinician Confirms or Overrides]
                                     |
-         +--------------------------+-------------------------+
-         |                          |                         |
-         v                          v                         v
-+------------------+      +-------------------+     +------------------+
-|  CHEST PIPELINE  |      |   BONE PIPELINE   |     | DENTAL PIPELINE  |
-|  (MobileNetV2)   |      |  (YOLOv8 Network) |     | (YOLOv8 Network) |
-| Binary Predict:  |      | Locate Fractures; |     | Locate Lesions;  |
-| Normal vs Pneumo |      | Tag Body Region   |     | FDI Tooth Number |
-+--------+---------+      +---------+---------+     +--------+---------+
-         |                          |                         |
-         +--------------------------+-------------------------+
+          v                          v
++------------------+      +-------------------+
+|  CHEST PIPELINE  |      |   BONE PIPELINE   |
+|  (MobileNetV2)   |      |  (YOLOv8 Network) |
+| Binary Predict:  |      | Locate Fractures; |
+| Normal vs Pneumo |      | Tag Body Region   |
++--------+---------+      +---------+---------+
+         |                          |
+         +--------------------------+
                                     |
                                     v
                   +-----------------------------------+
@@ -249,11 +231,10 @@ The application adopts a modular, sequential pipeline architecture. The complete
 |:---|:---|:---|
 | **Stage 1** | Image Ingestion | User selects or drags a radiograph (JPG/PNG). File is validated for integrity, format, and dimension safety. |
 | **Stage 2** | Image Preprocessing | An in-memory scaled copy is normalized (224×224 for CNNs, 640×640 for YOLOv8). The original image remains pristine. |
-| **Stage 3** | Modality Triage | Modality CNN predicts probability distribution across `[Chest, Bone, Dental]`. The UI displays the prediction with a dropdown override. |
+| **Stage 3** | Modality Triage | Modality CNN predicts probability distribution across `[Chest, Bone]`. The UI displays the prediction with a dropdown override. |
 | **Stage 4** | Model Dispatcher | Based on confirmed modality, the normalized tensor is routed to the designated inference weights. |
 | **Stage 5a** | Chest Inference | CNN outputs pneumonia probability $\hat{y} \in [0.0, 1.0]$. Values $\ge 0.5$ indicate Pneumonia. |
 | **Stage 5b** | Bone Inference | YOLOv8 performs non-maximum suppression (NMS), outputting coordinates $[x, y, w, h]$, body region, and fracture confidence. |
-| **Stage 5c** | Dental Inference | YOLOv8 outputs per-tooth bounding coordinates, condition label (Caries, Periapical), and FDI tooth number (e.g., #36). |
 | **Stage 6** | Visual Compositor | OpenCV draws bounding boxes and badges directly onto a render canvas alongside a tabular findings breakdown. |
 | **Stage 7** | Database Engine | Commits the record to SQLite (`patients`, `scans`, and `findings` tables) with the creator's `user_id` foreign key. |
 | **Stage 8** | Report Generation | Compiles an exportable clinical PDF summary containing hospital branding, patient details, annotated scans, and findings. |
@@ -289,32 +270,22 @@ Bone fracture diagnosis requires spatial bounding rather than global classificat
 - **Multi-Task Objective:** Combines Task-Aligned Focal Loss (classification) with Complete IoU (CIoU) and Distribution Focal Loss (bounding box localization).
 - **Target Classes:** `[Fracture, Wrist, Forearm, Elbow, Hand, Humerus, Shoulder]`.
 
-### 7.4 Dental Pathology Detection Model (YOLOv8 & FDI Notation)
-- **Panoramic Mapping:** Panoramic dental radiographs display an entire mandible and maxilla. The model is trained on the DENTEX dataset.
-- **FDI Two-Digit Numbering Standard:** 
-  - Quadrant 1: Upper Right (Teeth 11–18)
-  - Quadrant 2: Upper Left (Teeth 21–28)
-  - Quadrant 3: Lower Left (Teeth 31–38)
-  - Quadrant 4: Lower Right (Teeth 41–48)
-- **Target Pathologies:** `[Healthy, Caries, Deep Caries, Periapical Lesion, Impacted Tooth]`.
-- **Inference Output:** Bounding boxes pinpointing affected teeth with the exact FDI identifier (e.g., *"Tooth #36: Deep Caries (Confidence: 89%)"*).
-
-### 7.5 Modality Auto-Detection Classifier
-A 3-class convolutional network trained on a balanced composite dataset (1,500 images per category: Chest, Bone, Dental):
+### 7.4 Modality Auto-Detection Classifier
+A 2-class convolutional network trained on a balanced composite dataset (1,500 images per category: Chest, Bone):
 - **Softmax Probability:**
-  $$P(\text{Class} = k \mid \mathbf{x}) = \frac{e^{z_k}}{\sum_{j=1}^3 e^{z_j}}, \quad k \in \{\text{Chest, Bone, Dental}\}$$
+  $$P(\text{Class} = k \mid \mathbf{x}) = \frac{e^{z_k}}{\sum_{j=1}^2 e^{z_j}}, \quad k \in \{\text{Chest, Bone}\}$$
 - **Override Safeguard:** If prediction confidence is $< 75\%$, the UI highlights an amber warning prompting the clinician to confirm the modality.
 
 ### Table 2: Model Training Hyperparameters Summary
-| Hyperparameter | Chest Classifier (MobileNetV2) | Bone Detector (YOLOv8) | Dental Detector (YOLOv8) | Modality Classifier (CNN) |
+| Hyperparameter | Chest Classifier (MobileNetV2) | Bone Detector (YOLOv8) | Modality Classifier (CNN) |
 |:---|:---|:---|:---|:---|
-| **Base Architecture** | MobileNetV2 (ImageNet) | YOLOv8n (COCO pre-trained) | YOLOv8s (COCO pre-trained) | Custom 4-block ConvNet |
-| **Input Dimensions** | $224 \times 224 \times 3$ | $640 \times 640 \times 3$ | $640 \times 640 \times 3$ | $224 \times 224 \times 3$ |
-| **Loss Formulation** | Binary Cross-Entropy | CIoU + DFL + Focal Loss | CIoU + DFL + Focal Loss | Categorical Cross-Entropy |
-| **Optimizer** | Adam ($\text{lr} = 10^{-4}$) | AdamW ($\text{lr} = 10^{-3}$) | AdamW ($\text{lr} = 10^{-3}$) | Adam ($\text{lr} = 10^{-4}$) |
-| **Batch Size** | 16 (Local CPU) / 32 (GPU) | 16 | 16 | 32 |
-| **Epoch Budget** | 10–20 (Early stopping) | 50 | 50 | 15 |
-| **Export Format** | `chest_xray_model.h5` | `bone_fracture_model.pt` | `dental_xray_model.pt` | `xray_type_classifier.h5` |
+| **Base Architecture** | MobileNetV2 (ImageNet) | YOLOv8n (COCO pre-trained) | Custom 4-block ConvNet |
+| **Input Dimensions** | $224 \times 224 \times 3$ | $640 \times 640 \times 3$ | $224 \times 224 \times 3$ |
+| **Loss Formulation** | Binary Cross-Entropy | CIoU + DFL + Focal Loss | Categorical Cross-Entropy |
+| **Optimizer** | Adam ($\text{lr} = 10^{-4}$) | AdamW ($\text{lr} = 10^{-3}$) | Adam ($\text{lr} = 10^{-4}$) |
+| **Batch Size** | 16 (Local CPU) / 32 (GPU) | 16 | 32 |
+| **Epoch Budget** | 10–20 (Early stopping) | 50 | 15 |
+| **Export Format** | `chest_xray_model.h5` | `bone_fracture_model.pt` | `xray_type_classifier.h5` |
 
 ---
 
@@ -367,7 +338,7 @@ The application utilizes an embedded, zero-configuration SQLite relational datab
 | scan_id (PK)                                           |
 | patient_id (FK -> patients.patient_id)                 |
 | user_id (FK -> users.user_id)                          | <-- [Multi-User Isolation]
-| scan_type (Chest / Bone / Dental)                      |
+| scan_type (Chest / Bone)                               |
 | body_region (Wrist, Forearm, etc. - Nullable)          |
 | prediction (Primary Diagnostic Finding)                |
 | confidence (REAL 0.0 - 1.0)                            |
@@ -383,8 +354,7 @@ The application utilizes an embedded, zero-configuration SQLite relational datab
 +--------------------------------------------------------+
 | finding_id (PK)                                        |
 | scan_id (FK -> scans.scan_id)                          |
-| label (Fracture, Deep Caries, Pneumonia)               |
-| tooth_number (FDI code: e.g., '36' - Nullable)         |
+| label (Fracture, Pneumonia)                            |
 | confidence (REAL 0.0 - 1.0)                            |
 | bbox_x, bbox_y, bbox_w, bbox_h (Normalized REAL)       |
 +--------------------------------------------------------+
@@ -410,7 +380,7 @@ The application utilizes an embedded, zero-configuration SQLite relational datab
 | `scans` | `scan_id` | INTEGER | PRIMARY KEY AUTOINCREMENT | Unique scan record ID |
 | | `patient_id` | INTEGER | NOT NULL, REFERENCES `patients` | Associated patient foreign key |
 | | `user_id` | INTEGER | NOT NULL, REFERENCES `users` | Submitting clinician foreign key |
-| | `scan_type` | TEXT | CHECK(`scan_type` IN ('Chest','Bone','Dental')) | Modality category |
+| | `scan_type` | TEXT | CHECK(`scan_type` IN ('Chest','Bone')) | Modality category |
 | | `body_region` | TEXT | DEFAULT NULL | Populated for bone scans |
 | | `prediction` | TEXT | NOT NULL | Summary diagnostic label |
 | | `confidence` | REAL | NOT NULL | Top-level confidence score |
@@ -420,7 +390,6 @@ The application utilizes an embedded, zero-configuration SQLite relational datab
 | `findings` | `finding_id` | INTEGER | PRIMARY KEY AUTOINCREMENT | Unique finding record ID |
 | | `scan_id` | INTEGER | NOT NULL, REFERENCES `scans` | Associated scan foreign key |
 | | `label` | TEXT | NOT NULL | Specific finding label |
-| | `tooth_number` | TEXT | DEFAULT NULL | FDI identifier for dental scans |
 | | `confidence` | REAL | NOT NULL | Detection confidence score |
 | | `bbox_x`, `bbox_y`| REAL | DEFAULT NULL | Normalized upper-left coordinates |
 | | `bbox_w`, `bbox_h`| REAL | DEFAULT NULL | Normalized width and height |
@@ -434,7 +403,7 @@ The application utilizes an embedded, zero-configuration SQLite relational datab
 |:---|:---|:---|:---|
 | **Language** | Python | 3.10 / 3.11 | Core runtime environment |
 | **Deep Learning (CNN)** | TensorFlow / Keras | $\ge 2.15.0$ | Training and executing MobileNetV2 chest and modality classifiers |
-| **Object Detection (YOLO)**| Ultralytics YOLOv8 | $\ge 8.1.0$ | Real-time object detection for bone fractures and dental pathologies |
+| **Object Detection (YOLO)**| Ultralytics YOLOv8 | $\ge 8.1.0$ | Real-time object detection for bone fractures |
 | **Computer Vision** | OpenCV (`opencv-python`) | $\ge 4.8.0$ | Reading images, bounding-box compositing, image format conversions |
 | **Image Handling** | Pillow (PIL) | $\ge 10.0.0$ | Image loading, high-fidelity rescaling, aspect ratio management |
 | **GUI Framework** | PyQt5 / PySide6 | $\ge 5.15.10$ | Desktop user interface, window management, event handling |
@@ -451,10 +420,10 @@ The application utilizes an embedded, zero-configuration SQLite relational datab
 ### Table 6: 8-Week Development Roadmap
 | Week | Milestone / Phase | Planned Activities |
 |:---|:---|:---|
-| **Week 1** | Requirements & Data Acquisition | Setup project folders, obtain Kaggle, FracAtlas, and DENTEX datasets, configure dependencies |
-| **Week 2** | Data Preprocessing & Augmentation | Implement data augmentation, organize train/val/test splits, assemble 3-class modality dataset |
+| **Week 1** | Requirements & Data Acquisition | Setup project folders, obtain Kaggle and FracAtlas datasets, configure dependencies |
+| **Week 2** | Data Preprocessing & Augmentation | Implement data augmentation, organize train/val/test splits, assemble 2-class modality dataset |
 | **Week 3** | Chest CNN & Modality Training | Train MobileNetV2 pneumonia classifier, train modality classifier, evaluate and export `.h5` weights |
-| **Week 4** | Bone & Dental YOLOv8 Training | Format YOLO annotations, fine-tune YOLOv8 models for bone fractures and dental caries, export `.pt` weights |
+| **Week 4** | Bone YOLOv8 Training | Format YOLO annotations, fine-tune YOLOv8 model for bone fractures, export `.pt` weights |
 | **Week 5** | PyQt Desktop GUI Foundations | Build `MainWindow`, navigation sidebar, `LoginWindow`, `SignUpWindow`, and visual styles in `theme.py` |
 | **Week 6** | Database Integration & Security | Initialize SQLite schema, implement `database.py` and `auth.py`, wire role-based access control |
 | **Week 7** | Inference Engine & Report Generation | Build `model_engine.py`, OpenCV overlay rendering, and PDF report compilation via `report_generator.py` |
@@ -465,9 +434,9 @@ The application utilizes an embedded, zero-configuration SQLite relational datab
 ## 12. Expected Outcomes & Key Deliverables
 
 - **Fully Functional Desktop Application:** A desktop GUI built with PyQt allowing clinicians to log in, upload radiographs, and review findings.
-- **Accurate Modality Triage:** An automated classifier that correctly identifies Chest, Bone, and Dental radiographs with $> 95\%$ accuracy.
+- **Accurate Modality Triage:** An automated classifier that correctly identifies Chest and Bone radiographs with $> 95\%$ accuracy.
 - **Reliable Pneumonia Detection:** A chest CNN model that provides high sensitivity and specificity in screening for pneumonia.
-- **Spatial Abnormality Detection:** Two YOLOv8 models that localize fractures and dental pathologies with clear visual bounding boxes and confidence scores.
+- **Spatial Abnormality Detection:** A YOLOv8 model that localizes fractures with clear visual bounding boxes and confidence scores.
 - **Robust Multi-User Security:** Complete separation between Admin and User roles, with salted password hashing and private patient records.
 - **Professional Clinical Reports:** Automated, print-ready PDF reports compiling patient demographics, scan findings, and annotated images.
 
@@ -493,7 +462,6 @@ The following extensions are planned for post-academic and clinical iterations:
 | **Chest Model Training** | Ready for execution | Produces `model/chest/chest_xray_model.h5` |
 | **Modality Classifier** | Fully designed | Dataset generation protocol and CNN architecture ready for training |
 | **Bone Fracture YOLOv8** | Fully designed | YOLO configuration and dataset mapping prepared |
-| **Dental Lesion YOLOv8** | Fully designed | DENTEX FDI numbering taxonomy and dataset mappings established |
 | **Authentication & Database**| Fully designed | SQLite 3NF schema and bcrypt hashing model completed |
 | **GUI & Visual Theme** | Fully designed | Color palette, screen inventory, and layout patterns established |
 | **Desktop Application Code**| Scheduled for Phase 1–5| Application modules to be developed in structured phases |
@@ -754,7 +722,7 @@ Development is organized into five sequential phases to ensure smooth integratio
         |
         v
 [Phase 2: Modality Triaging]
- - Create composite training dataset for Chest, Bone, and Dental X-rays
+ - Create composite training dataset for Chest and Bone X-rays
  - Train and export xray_type_classifier.h5
  - Implement NewScanPage with auto-detection and manual dropdown override
         |
@@ -765,16 +733,10 @@ Development is organized into five sequential phases to ensure smooth integratio
  - Implement detection_overlay.py using OpenCV bounding boxes
         |
         v
-[Phase 4: Panoramic Dental Diagnostics]
- - Prepare DENTEX panoramic dataset annotations (FDI numbering mapping)
- - Train YOLOv8 dental model (dental_xray_model.pt)
- - Integrate FDI tooth findings table into the UI
-        |
-        v
-[Phase 5: Administration & Clinical Reports]
+[Phase 4: Administration & Clinical Reports]
  - Implement report_generator.py using ReportLab for PDF export
  - Build Admin-only views (Manage Users and Activity Log)
- - Perform end-to-end system testing across all three modalities
+ - Perform end-to-end system testing across both modalities
 ```
 
 ---
@@ -789,7 +751,7 @@ Development is organized into five sequential phases to ensure smooth integratio
 | **Background Light** | `#F4F6F8` | Main application background and view panels |
 | **Card Surface** | `#FFFFFF` | Input forms, patient tables, image viewports |
 | **Status: Normal** | `#639922` | Badges and indicators for "Normal" results |
-| **Status: Abnormal** | `#E24B4A` | Badges and alerts for fractures, pneumonia, and caries |
+| **Status: Abnormal** | `#E24B4A` | Badges and alerts for fractures and pneumonia |
 | **Status: Inconclusive**| `#BA7517` | Warning badges for low-confidence detections ($< 70\%$) |
 | **Text Primary** | `#1A202C` | Headings, labels, and primary body typography |
 | **Text Muted** | `#718096` | Subtitles, input placeholders, and metadata captions |
@@ -850,13 +812,9 @@ xray_ai_project/
 |   |-- bone_xray/
 |   |   |-- images/ (train/, val/)
 |   |   `-- labels/ (YOLO TXT format)
-|   |-- dental_xray/
-|   |   |-- images/ (train/, val/)
-|   |   `-- labels/ (YOLO TXT format with FDI classes)
 |   `-- xray_type/
 |       |-- chest/
-|       |-- bone/
-|       `-- dental/
+|       `-- bone/
 |
 |-- model/
 |   |-- type_classifier/
@@ -866,14 +824,10 @@ xray_ai_project/
 |   |   |-- train_model.py
 |   |   |-- predict.py
 |   |   `-- chest_xray_model.h5
-|   |-- bone/
-|   |   |-- train_bone_yolo.py
-|   |   |-- bone_dataset.yaml
-|   |   `-- bone_fracture_model.pt
-|   `-- dental/
-|       |-- train_dental_yolo.py
-|       |-- dental_dataset.yaml
-|       `-- dental_xray_model.pt
+|   `-- bone/
+|       |-- train_bone_yolo.py
+|       |-- bone_dataset.yaml
+|       `-- bone_fracture_model.pt
 |
 |-- app/
 |   |-- main.py                     # Application entry point
@@ -919,7 +873,7 @@ xray_ai_project/
 
 ## 19. Conclusion
 
-The **Intelligent X-Ray Image Analysis & Abnormality Detection System** represents a comprehensive, multi-modal artificial intelligence solution for clinical plain radiography. By unifying three diverse diagnostic domains—**Chest Pneumonia Classification**, **Bone Fracture Localization**, and **Dental Panoramic Abnormality Detection**—under an automated modality triaging system, the application delivers a versatile assistive diagnostic platform.
+The **Intelligent X-Ray Image Analysis & Abnormality Detection System** represents a comprehensive, multi-modal artificial intelligence solution for clinical plain radiography. By unifying two diverse diagnostic domains—**Chest Pneumonia Classification** and **Bone Fracture Localization**—under an automated modality triaging system, the application delivers a versatile assistive diagnostic platform.
 
 Built with **PyQt5**, **SQLite**, and **ReportLab**, the system ensures patient confidentiality through fully offline local execution. The technical foundation laid out in this document provides a complete, cohesive blueprint ready for the upcoming application code implementation phase.
 
@@ -932,11 +886,10 @@ Built with **PyQt5**, **SQLite**, and **ReportLab**, the system ensures patient 
 3. **Rajpurkar, P., et al.** (2018). *MURA: Large Dataset for Abnormality Detection in Musculoskeletal Radiographs*. Stanford Machine Learning Group.
 4. **Kabir, H., et al.** (2023). *FracAtlas: A Dataset for Fracture Classification, Localization, and Segmentation of Musculoskeletal Radiographs*. Scientific Data, 10(1), 812.
 5. **Nagy, E., et al.** (2022). *GRAZPEDWRI-DX: A Clinical Dataset of Pediatric Wrist Trauma Radiographs with Bounding Box Annotations*. Scientific Data, 9(1), 548.
-6. **DENTEX Challenge Consortium.** (2023). *Dental Enumeration and Diagnosis on Panoramic X-rays Dataset*. IEEE International Symposium on Biomedical Imaging (ISBI).
-7. **Jocher, G., Chaurasia, A., & Qiu, J.** (2023). *Ultralytics YOLOv8 Architecture and Documentation*. Ultralytics.
-8. **Sandler, M., Howard, A., Zhu, M., et al.** (2018). *MobileNetV2: Inverted Residuals and Linear Bottlenecks*. IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 4510–4520.
-9. **Riverbank Computing.** (2023). *PyQt5 Reference Guide and API Documentation*.
-10. **ReportLab Europe Ltd.** (2023). *ReportLab PDF Generation User Guide*.
+6. **Jocher, G., Chaurasia, A., & Qiu, J.** (2023). *Ultralytics YOLOv8 Architecture and Documentation*. Ultralytics.
+7. **Sandler, M., Howard, A., Zhu, M., et al.** (2018). *MobileNetV2: Inverted Residuals and Linear Bottlenecks*. IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 4510–4520.
+8. **Riverbank Computing.** (2023). *PyQt5 Reference Guide and API Documentation*.
+9. **ReportLab Europe Ltd.** (2023). *ReportLab PDF Generation User Guide*.
 
 ---
 *End of Finalized Documentation Report*

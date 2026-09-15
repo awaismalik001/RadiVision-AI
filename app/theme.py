@@ -32,7 +32,7 @@ TEXT_TEAL       = "#0D9488"   # User badge text
 # Status & Badge Colors
 SUCCESS_GREEN   = "#16A34A"   # Normal / Healthy findings text
 BG_SUCCESS      = "#DCFCE7"   # Normal badge background
-DANGER_RED      = "#DC2626"   # Pneumonia, Fractures, Caries (Abnormal) text
+DANGER_RED      = "#DC2626"   # Pneumonia, Fractures (Abnormal) text
 BG_DANGER       = "#FEE2E2"   # Abnormal / Error alert background
 WARNING_AMBER   = "#D97706"   # Inconclusive, Low-Confidence, Review Needed
 BG_WARNING      = "#FEF3C7"   # Inconclusive badge background
@@ -287,7 +287,7 @@ def get_status_badge_style(status_type: str) -> str:
         bg = BG_SUCCESS
         fg = SUCCESS_GREEN
         border = "#86EFAC"
-    elif any(term in status for term in ["abnormal", "pneumonia", "fracture", "caries", "lesion", "danger", "error"]):
+    elif any(term in status for term in ["abnormal", "pneumonia", "fracture", "lesion", "danger", "error"]):
         bg = BG_DANGER
         fg = DANGER_RED
         border = "#FCA5A5"

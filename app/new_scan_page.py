@@ -430,7 +430,7 @@ class NewScanPage(QWidget):
 
         self.findings_table = QTableWidget(visual_card)
         self.findings_table.setColumnCount(4)
-        self.findings_table.setHorizontalHeaderLabels(["#", "Finding", "Location / Tooth", "Confidence"])
+        self.findings_table.setHorizontalHeaderLabels(["#", "Finding", "Location", "Confidence"])
         self.findings_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.findings_table.setMinimumHeight(100)
         self.findings_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -525,7 +525,7 @@ class NewScanPage(QWidget):
         if not ann_pixmap.isNull():
             self.image_display.set_scalable_pixmap(ann_pixmap)
 
-        is_abnormal = any(term in prediction_text.lower() for term in ["abnormal", "pneumonia", "fracture", "caries", "lesion"])
+        is_abnormal = any(term in prediction_text.lower() for term in ["abnormal", "pneumonia", "fracture", "lesion"])
 
         # Update Prediction Result Box matching mockup
         if is_abnormal:
@@ -550,7 +550,7 @@ class NewScanPage(QWidget):
         for row, f in enumerate(findings):
             self.findings_table.setItem(row, 0, QTableWidgetItem(str(row + 1)))
             self.findings_table.setItem(row, 1, QTableWidgetItem(f["label"]))
-            loc_str = f"Tooth #{f['tooth_number']}" if f.get("tooth_number") else (body_region or "Thoracic")
+            loc_str = body_region or "Thoracic"
             self.findings_table.setItem(row, 2, QTableWidgetItem(loc_str))
             self.findings_table.setItem(row, 3, QTableWidgetItem(f"{f['confidence']*100:.1f}%"))
 
@@ -579,7 +579,6 @@ class NewScanPage(QWidget):
                 db.create_finding(
                     scan_id=scan_id,
                     label=f["label"],
-                    tooth_number=f.get("tooth_number"),
                     confidence=f["confidence"],
                     bbox_x=f.get("bbox_x"),
                     bbox_y=f.get("bbox_y"),

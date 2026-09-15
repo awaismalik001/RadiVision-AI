@@ -307,7 +307,7 @@ class DashboardOverviewPage(QWidget):
             row_layout.addWidget(left_lbl, 1)
 
             # Right: Diagnosis (Confidence%)
-            is_abnormal = any(term in r['prediction'].lower() for term in ["abnormal", "pneumonia", "fracture", "caries", "lesion"])
+            is_abnormal = any(term in r['prediction'].lower() for term in ["abnormal", "pneumonia", "fracture", "lesion"])
             tag_color = DANGER_RED if is_abnormal else SUCCESS_GREEN
             tag_text = f"{r['prediction']} ({int(r['confidence']*100)}%)"
             right_lbl = QLabel(tag_text, row_frame)

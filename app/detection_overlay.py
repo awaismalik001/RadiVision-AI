@@ -2,7 +2,7 @@
 detection_overlay.py
 --------------------
 Computer Vision rendering engine for RadiVision AI.
-Composites anti-aliased bounding boxes, FDI dental labels, fracture markers,
+Composites anti-aliased bounding boxes, fracture markers,
 and clinical diagnostic status badges onto radiographs using OpenCV (with PIL fallback).
 """
 
@@ -73,10 +73,10 @@ def _render_with_opencv(
     NAVY_BRAND = (102, 61, 11)      # #0B3D66 in BGR
     WHITE = (255, 255, 255)
 
-    is_abnormal = any(term in summary_prediction.lower() for term in ["abnormal", "pneumonia", "fracture", "caries", "lesion"])
+    is_abnormal = any(term in summary_prediction.lower() for term in ["abnormal", "pneumonia", "fracture", "lesion"])
     badge_color = RED_ALERT if is_abnormal else GREEN_SUCCESS
 
-    # 1. Draw Bounding Boxes for Object Detection findings (Bone & Dental)
+    # 1. Draw Bounding Boxes for Object Detection findings (Bone)
     for f in findings:
         bx = f.get("bbox_x")
         by = f.get("bbox_y")
@@ -94,16 +94,13 @@ def _render_with_opencv(
             x1, y1 = max(0, x1), max(0, y1)
             x2, y2 = min(w - 1, x2), min(h - 1, y2)
 
-            box_color = RED_ALERT if "fracture" in f['label'].lower() or "caries" in f['label'].lower() or "lesion" in f['label'].lower() else GREEN_SUCCESS
+            box_color = RED_ALERT if "fracture" in f['label'].lower() or "lesion" in f['label'].lower() else GREEN_SUCCESS
 
             # Draw rectangular bounding box
             cv2.rectangle(img, (x1, y1), (x2, y2), box_color, 3, cv2.LINE_AA)
 
             # Construct label tag
-            if f.get("tooth_number"):
-                tag_text = f"Tooth #{f['tooth_number']}: {f['label']} ({int(f['confidence'] * 100)}%)"
-            else:
-                tag_text = f"{f['label']} ({int(f['confidence'] * 100)}%)"
+            tag_text = f"{f['label']} ({int(f['confidence'] * 100)}%)"
 
             # Tag background banner
             (tw, th), baseline = cv2.getTextSize(tag_text, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 2)
@@ -140,7 +137,7 @@ def _render_with_pil(
     NAVY_BRAND = (11, 61, 102)
     WHITE = (255, 255, 255)
 
-    is_abnormal = any(term in summary_prediction.lower() for term in ["abnormal", "pneumonia", "fracture", "caries", "lesion"])
+    is_abnormal = any(term in summary_prediction.lower() for term in ["abnormal", "pneumonia", "fracture", "lesion"])
     badge_color = RED_ALERT if is_abnormal else GREEN_SUCCESS
 
     # 1. Bounding Boxes
@@ -154,8 +151,6 @@ def _render_with_pil(
 
             draw.rectangle([x1, y1, x2, y2], outline=RED_ALERT, width=3)
             tag = f"{f['label']} ({int(f['confidence'] * 100)}%)"
-            if f.get("tooth_number"):
-                tag = f"Tooth #{f['tooth_number']}: {tag}"
 
             draw.rectangle([x1, max(0, y1 - 22), x1 + len(tag) * 9, y1], fill=RED_ALERT)
             draw.text((x1 + 4, max(0, y1 - 18)), tag, fill=WHITE)

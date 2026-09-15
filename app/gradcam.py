@@ -163,7 +163,6 @@ def localize_chest_abnormality(
 
     return {
         "label": specific_label,
-        "tooth_number": None,
         "confidence": confidence,
         "bbox_x": round(float(bbox_x), 3),
         "bbox_y": round(float(bbox_y), 3),
