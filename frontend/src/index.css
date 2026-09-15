@@ -1,12 +1,25 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-cyber-bg text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
+@theme {
+  --color-cyber-bg: #0a0e17;
+  --color-cyber-surface: #111827;
+  --color-cyber-card: #151f32;
+  --color-cyber-border: #1e293b;
+  --color-cyber-cyan: #06b6d4;
+  --color-cyber-glow: #22d3ee;
+  --color-cyber-navy: #0B3D66;
+  --color-cyber-danger: #ef4444;
+  --color-cyber-success: #10b981;
+  --color-cyber-amber: #f59e0b;
+}
+
+body {
+  background-color: #070b14;
+  color: #f1f5f9;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 /* Custom Cyber-Clinical Scrollbars */

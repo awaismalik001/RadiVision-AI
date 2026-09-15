@@ -178,4 +178,13 @@ def get_recommended_facilities(location: str, modality: str, is_abnormal: bool =
     else:
         facilities = DEFAULT_FALLBACK[mod_clean]
 
-    return facilities[:3]
+    # Normalize fields for both frontend and PDF report engines
+    normalized = []
+    for fac in facilities[:3]:
+        item = dict(fac)
+        item["hospital_name"] = item.get("hospital", item.get("hospital_name", "Specialist Center"))
+        item["doctor_name"] = item.get("doctor", item.get("doctor_name", "Chief Medical Officer"))
+        normalized.append(item)
+
+    return normalized
+

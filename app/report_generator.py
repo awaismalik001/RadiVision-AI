@@ -202,24 +202,34 @@ def generate_pdf_report(scan_details: Dict[str, Any]) -> str:
     # 5. Section 4: LOCAL HEALTHCARE & SPECIALIST REFERRALS
     story.append(Paragraph("<b>4. LOCAL HEALTHCARE & SPECIALIST REFERRALS</b>", sec_heading_style))
 
-    facilities = get_recommended_facilities(location_str, modality, is_abnormal)
+    facilities = scan_details.get("facilities") or get_recommended_facilities(location_str, modality, is_abnormal)
     referral_rows = []
     
     ref_title_style = ParagraphStyle('RefTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=colors.HexColor("#1A202C"))
     ref_val_style = ParagraphStyle('RefVal', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=colors.HexColor("#2D3748"))
 
-    for f_idx, fac in enumerate(facilities):
+    for f_idx, fac in enumerate(facilities[:3]):
+        h_name = fac.get('hospital') or fac.get('hospital_name') or 'Specialist Hospital'
+        d_name = fac.get('doctor') or fac.get('doctor_name') or 'Attending Physician'
+        phone = fac.get('phone') or 'N/A'
+        email = fac.get('email')
+
         referral_rows.append([
-            Paragraph(f"<b>Hospital:</b> {fac.get('hospital')}", ref_title_style)
+            Paragraph(f"<b>Hospital:</b> {h_name}", ref_title_style)
         ])
         referral_rows.append([
-            Paragraph(f"<b>Doctor:</b> {fac.get('doctor')}", ref_val_style)
+            Paragraph(f"<b>Doctor:</b> {d_name}", ref_val_style)
         ])
         referral_rows.append([
-            Paragraph(f"<b>Phone No:</b> {fac.get('phone')}", ref_val_style)
+            Paragraph(f"<b>Phone No:</b> {phone}", ref_val_style)
         ])
-        if f_idx < len(facilities) - 1:
-            referral_rows.append([Spacer(1, 5)])
+        if email:
+            referral_rows.append([
+                Paragraph(f"<b>Email:</b> {email}", ref_val_style)
+            ])
+        if f_idx < min(len(facilities), 3) - 1:
+            referral_rows.append([Spacer(1, 4)])
+
 
     t_referral = Table(referral_rows, colWidths=[510])
     t_referral.setStyle(TableStyle([
