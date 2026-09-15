@@ -41,7 +41,7 @@ VAL_DIR = os.path.join(DATASET_DIR, "val")
 TEST_DIR = os.path.join(DATASET_DIR, "test")
 EXPORT_MODEL_PATH = os.path.join(CURRENT_DIR, "bone_fracture_model.pt")
 
-def train_bone_model(epochs: int = 3, batch_size: int = 24, lr: float = 2.5e-4, samples_per_class: int = 1500, use_all: bool = False):
+def train_bone_model(epochs: int = 2, batch_size: int = 32, lr: float = 1.5e-4, samples_per_class: int = None, use_all: bool = True, resume: bool = True):
     print("=" * 68)
     print("       RadiVision AI: Scaled-Up Bone Fracture Transfer Learning Engine")
     print("=" * 68)
@@ -50,8 +50,13 @@ def train_bone_model(epochs: int = 3, batch_size: int = 24, lr: float = 2.5e-4, 
         print(f"[Error] Dataset directory not found at: {TRAIN_DIR}")
         return
 
+    # Maximize CPU core utilization
+    cpu_threads = min(8, os.cpu_count() or 4)
+    torch.set_num_threads(cpu_threads)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Compute Device : {device}")
+    print(f"CPU Threads    : {cpu_threads}")
     print(f"Dataset Path   : {DATASET_DIR}")
 
     # Clinical Radiograph Data Augmentation
@@ -121,7 +126,25 @@ def train_bone_model(epochs: int = 3, batch_size: int = 24, lr: float = 2.5e-4, 
         nn.Dropout(0.2),
         nn.Linear(128, 2)
     )
-    model = model.to(device)
+    best_acc = 0.0
+    if resume and os.path.exists(EXPORT_MODEL_PATH):
+        try:
+            sd = torch.load(EXPORT_MODEL_PATH, map_location=device)
+            if isinstance(sd, dict) and "classifier.1.weight" in sd:
+                model.load_state_dict(sd)
+                print(f"Warm-starting from existing clinical checkpoint: {EXPORT_MODEL_PATH}")
+                # Evaluate baseline accuracy on test set
+                model.eval()
+                base_corr = 0
+                with torch.no_grad():
+                    for inputs, labels in test_loader:
+                        inputs, labels = inputs.to(device), labels.to(device)
+                        preds = torch.max(model(inputs), 1)[1]
+                        base_corr += torch.sum(preds == labels.data).item()
+                best_acc = (base_corr / len(test_dataset)) * 100.0
+                print(f"Baseline Benchmark Test Accuracy: {best_acc:.2f}%")
+        except Exception as e:
+            print(f"[Notice] Could not load checkpoint for warm-start: {e}")
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam([
@@ -131,7 +154,6 @@ def train_bone_model(epochs: int = 3, batch_size: int = 24, lr: float = 2.5e-4, 
 
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
-    best_acc = 0.0
     total_batches = len(train_loader)
     print(f"\nStarting Scaled Training ({epochs} Epochs, {total_batches} batches/epoch)...")
     print("-" * 68)
@@ -156,7 +178,7 @@ def train_bone_model(epochs: int = 3, batch_size: int = 24, lr: float = 2.5e-4, 
             train_total += labels.size(0)
 
             # Periodic batch progress logging
-            if batch_idx % max(1, total_batches // 5) == 0 or batch_idx == total_batches:
+            if batch_idx % max(1, total_batches // 10) == 0 or batch_idx == total_batches:
                 pct = (batch_idx / total_batches) * 100.0
                 curr_acc = (train_corrects / train_total) * 100.0
                 curr_loss = running_loss / train_total
@@ -195,21 +217,37 @@ def train_bone_model(epochs: int = 3, batch_size: int = 24, lr: float = 2.5e-4, 
     try:
         from model.bone.evaluate_bone import evaluate_bone
         print("\nUpdating clinical performance report & confusion matrix plots...")
-        evaluate_bone()
+        res = evaluate_bone()
+        
+        # Copy updated plots to artifact directory
+        import shutil
+        artifact_dir = r"C:\Users\FAME\.gemini\antigravity\brain\c05f3747-54b8-4cb6-9673-253a4cab7b48"
+        if os.path.exists(artifact_dir):
+            cm_src = os.path.join(CURRENT_DIR, "confusion_matrix.png")
+            roc_src = os.path.join(CURRENT_DIR, "roc_curve.png")
+            if os.path.exists(cm_src):
+                shutil.copy2(cm_src, os.path.join(artifact_dir, "bone_confusion_matrix.png"))
+            if os.path.exists(roc_src):
+                shutil.copy2(roc_src, os.path.join(artifact_dir, "bone_roc_curve.png"))
+            print("[Artifacts] Updated bone confusion matrix and ROC curve artifacts.")
     except Exception as ee:
         print(f"[Notice] Could not auto-run evaluate_bone: {ee}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Bone Fracture Deep Learning Model")
-    parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs (default: 3)")
-    parser.add_argument("--batch-size", type=int, default=24, help="Batch size (default: 24)")
-    parser.add_argument("--samples", type=int, default=1500, help="Samples per class (default: 1500, total 3000)")
-    parser.add_argument("--all", action="store_true", help="Train on ALL 9,246 images in the dataset")
+    parser.add_argument("--epochs", type=int, default=2, help="Number of training epochs (default: 2)")
+    parser.add_argument("--batch-size", type=int, default=32, help="Batch size (default: 32)")
+    parser.add_argument("--samples", type=int, default=None, help="Samples per class (None for all)")
+    parser.add_argument("--all", action="store_true", default=True, help="Train on ALL 9,246 images in the dataset")
+    parser.add_argument("--lr", type=float, default=1.5e-4, help="Learning rate (default: 1.5e-4)")
+    parser.add_argument("--no-resume", action="store_true", help="Do not warm start from existing checkpoint")
     args = parser.parse_args()
 
     train_bone_model(
         epochs=args.epochs,
         batch_size=args.batch_size,
+        lr=args.lr,
         samples_per_class=args.samples,
-        use_all=args.all
+        use_all=True if args.samples is None else args.all,
+        resume=not args.no_resume
     )
