@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RadiVision AI (Run App)",
+            "name": "RadiVision AI - Desktop GUI (main.py)",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
@@ -13,7 +13,18 @@
             }
         },
         {
-            "name": "Evaluate Chest Model",
+            "name": "RadiVision AI - FastAPI Backend (server.py)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/server.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Evaluate Chest Model (90.72%)",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/model/chest/evaluate_chest.py",
@@ -21,7 +32,7 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Evaluate Bone Model",
+            "name": "Evaluate Bone Model (91.40%)",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/model/bone/evaluate_bone.py",

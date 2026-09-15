@@ -22,6 +22,7 @@ if not check_qt_installed():
 from app.qt_compat import QtWidgets, QtCore, Qt, QFont
 from app.theme import GLOBAL_STYLESHEET
 from app.database import db
+from app.splash_screen import SplashScreen
 from app.login_window import LoginWindow
 from app.signup_window import SignUpWindow
 from app.main_window import MainWindow
@@ -30,11 +31,13 @@ class RadiVisionApp:
     """Application controller coordinating window transitions."""
 
     def __init__(self):
+        self.splash_screen = SplashScreen()
         self.login_window = LoginWindow()
         self.signup_window = SignUpWindow()
         self.main_window = MainWindow()
 
         # Connect signals
+        self.splash_screen.finished.connect(self.show_login)
         self.login_window.login_successful.connect(self.on_login_success)
         self.login_window.switch_to_signup.connect(self.show_signup)
 
@@ -44,7 +47,8 @@ class RadiVisionApp:
         self.main_window.logout_requested.connect(self.on_logout)
 
     def start(self):
-        self.login_window.show()
+        self.splash_screen.show()
+
 
     def show_login(self):
         self.signup_window.hide()

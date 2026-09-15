@@ -12,7 +12,7 @@ from app.qt_compat import (
 )
 
 from app.theme import (
-    PRIMARY_NAVY, SECONDARY_BLUE, CARD_BG,
+    PRIMARY_NAVY, SECONDARY_BLUE, CARD_BG, BORDER_COLOR,
     TEXT_DARK, TEXT_SECONDARY, TEXT_MUTED, DANGER_RED, SUCCESS_GREEN, GLOBAL_STYLESHEET,
     FONT_XS, FONT_SM, FONT_BASE, FONT_MD, FONT_LG
 )
@@ -53,11 +53,12 @@ class SignUpWindow(QWidget):
         card.setStyleSheet(f"""
             #SignUpCard {{
                 background-color: {CARD_BG};
-                border: 1px solid #CBD5E1;
+                border: 1px solid {BORDER_COLOR};
                 border-radius: 12px;
                 padding: 16px;
             }}
         """)
+
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(6)
 

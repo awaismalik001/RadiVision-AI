@@ -34,47 +34,50 @@ from app.manage_users_page import ManageUsersPage
 from app.activity_log_page import ActivityLogPage
 
 # Pre-computed sidebar CSS strings — built once at import, reused on every toggle
-# (avoids allocating a new f-string for 6+ buttons on every resize/collapse event)
 _NAV_BTN_COLLAPSED_CSS = f"""
     QPushButton {{
         background-color: transparent;
-        color: {TEXT_DARK};
+        color: {TEXT_SECONDARY};
         text-align: center;
         padding: 7px 0px;
         font-size: {FONT_MD};
-        border: none;
+        border: 1px solid transparent;
         border-radius: 6px;
         margin: 2px 4px;
     }}
     QPushButton:checked {{
-        background-color: #E0F2FE;
-        color: {PRIMARY_NAVY};
+        background-color: rgba(6, 182, 212, 0.15);
+        color: #22D3EE;
         font-weight: 600;
+        border: 1px solid rgba(6, 182, 212, 0.4);
     }}
     QPushButton:hover:!checked {{
-        background-color: #F1F5F9;
+        background-color: #1E293B;
+        color: #F8FAFC;
     }}
 """
 
 _NAV_BTN_EXPANDED_CSS = f"""
     QPushButton {{
         background-color: transparent;
-        color: {TEXT_DARK};
+        color: {TEXT_SECONDARY};
         text-align: left;
         padding: 7px 10px;
         font-size: {FONT_BASE};
         font-weight: 500;
-        border: none;
+        border: 1px solid transparent;
         border-radius: 6px;
         margin: 1px 6px;
     }}
     QPushButton:checked {{
-        background-color: #E0F2FE;
-        color: {PRIMARY_NAVY};
+        background-color: rgba(6, 182, 212, 0.15);
+        color: #22D3EE;
         font-weight: 600;
+        border: 1px solid rgba(6, 182, 212, 0.4);
     }}
     QPushButton:hover:!checked {{
-        background-color: #F1F5F9;
+        background-color: #1E293B;
+        color: #F8FAFC;
     }}
 """
 
@@ -84,12 +87,14 @@ _LOGOUT_COLLAPSED_CSS = f"""
         text-align: center;
         padding: 7px 0px;
         font-size: {FONT_MD};
-        border: none;
+        border: 1px solid transparent;
         border-radius: 6px;
         margin: 2px 4px;
+        color: {TEXT_SECONDARY};
     }}
     QPushButton:hover {{
-        background-color: #FEE2E2;
+        background-color: #4C0519;
+        color: #EF4444;
     }}
 """
 
@@ -101,15 +106,16 @@ _LOGOUT_EXPANDED_CSS = f"""
         padding: 7px 10px;
         font-size: {FONT_BASE};
         font-weight: 500;
-        border: none;
+        border: 1px solid transparent;
         border-radius: 6px;
         margin: 1px 6px;
     }}
     QPushButton:hover {{
-        background-color: #FEE2E2;
+        background-color: #4C0519;
         color: {DANGER_RED};
     }}
 """
+
 
 
 
@@ -318,12 +324,12 @@ class DashboardOverviewPage(QWidget):
             self.activity_layout.addWidget(row_frame)
 
 class MainWindow(QMainWindow):
-    """Primary clinical application shell for RadiVision AI (X-Ray AI)."""
+    """Primary clinical application shell for RadiVision AI."""
     logout_requested = Signal() if Signal else None
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("X-Ray AI — Clinical Abnormality Screening")
+        self.setWindowTitle("RadiVision AI — Clinical Radiographic Intelligence Suite")
         self.setMinimumSize(700, 480)
 
         # Ensure window proportions fit comfortably within available desktop screen
@@ -362,7 +368,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(0, 12, 0, 12)
         sidebar_layout.setSpacing(2)
 
-        # Brand header: Stethoscope icon + "X-Ray AI"
+        # Brand header: Stethoscope icon + "RadiVision AI"
         self.brand_row = QHBoxLayout()
         self.brand_row.setContentsMargins(14, 0, 14, 8)
         self.brand_row.setSpacing(6)
@@ -371,7 +377,8 @@ class MainWindow(QMainWindow):
         self.steth_icon.setStyleSheet(f"font-size: 16px; color: {TEXT_ACCENT};")
         self.brand_row.addWidget(self.steth_icon)
 
-        self.brand_label = QLabel("X-Ray AI", self.sidebar)
+        self.brand_label = QLabel("RadiVision AI", self.sidebar)
+
         self.brand_label.setStyleSheet(f"font-size: {FONT_BASE}; font-weight: 600; color: {TEXT_DARK};")
         self.brand_row.addWidget(self.brand_label)
         self.brand_row.addStretch()

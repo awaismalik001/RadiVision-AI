@@ -36,9 +36,9 @@ class SegmentedTabControl(QFrame):
         self.setFixedHeight(44)
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: #F1F5F9;
+                background-color: #0B1120;
                 border-radius: 8px;
-                border: 0.5px solid {BORDER_COLOR};
+                border: 1px solid {BORDER_COLOR};
             }}
         """)
 
@@ -71,9 +71,9 @@ class SegmentedTabControl(QFrame):
     def update_styles(self):
         active_style = f"""
             QPushButton {{
-                background-color: {PRIMARY_NAVY};
+                background-color: #0891B2;
                 color: #FFFFFF;
-                border: none;
+                border: 1px solid #06B6D4;
                 border-radius: 6px;
                 font-size: {FONT_BASE};
                 font-weight: 600;
@@ -89,8 +89,8 @@ class SegmentedTabControl(QFrame):
                 font-weight: 500;
             }}
             QPushButton:hover {{
-                color: {TEXT_DARK};
-                background-color: #E2E8F0;
+                color: #F8FAFC;
+                background-color: #1E293B;
             }}
         """
         if self.current_tab == 0:
@@ -99,6 +99,7 @@ class SegmentedTabControl(QFrame):
         else:
             self.btn_login.setStyleSheet(inactive_style)
             self.btn_signup.setStyleSheet(active_style)
+
 
 class LoginWindow(QWidget):
     """Unified Clinical Authentication Window featuring Tabbed Login/Sign-up and Shake Feedback."""

@@ -56,8 +56,10 @@ if QT_API is not None:
     QProgressBar = QtWidgets.QProgressBar
     QSizePolicy = QtWidgets.QSizePolicy
     QThread = QtCore.QThread
+    QTimer = QtCore.QTimer
     QBoxLayout = QtWidgets.QBoxLayout
 else:
+
     # Dummy fallbacks when Qt is not installed
     QWidget = object
     QMainWindow = object

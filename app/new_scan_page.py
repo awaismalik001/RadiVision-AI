@@ -97,15 +97,15 @@ class DropZoneWidget(QFrame):
         self._style_normal = f"""
             #DropZone {{
                 background-color: {SURFACE_1};
-                border: 1.5px dashed {BORDER_STRONG};
+                border: 1.5px dashed #334155;
                 border-radius: 10px;
                 padding: 20px;
             }}
         """
         self._style_drag = f"""
             #DropZone {{
-                background-color: #F0F7FF;
-                border: 2px dashed {PRIMARY_NAVY};
+                background-color: #082F49;
+                border: 2px dashed #06B6D4;
                 border-radius: 10px;
                 padding: 20px;
             }}
@@ -119,7 +119,7 @@ class DropZoneWidget(QFrame):
         # Cloud upload icon
         icon_lbl = QLabel("☁", self)
         icon_lbl.setAlignment(Qt.AlignCenter)
-        icon_lbl.setStyleSheet(f"font-size: 26px; color: {TEXT_SECONDARY};")
+        icon_lbl.setStyleSheet("font-size: 28px; color: #06B6D4;")
         layout.addWidget(icon_lbl)
 
         # Prompt text
@@ -136,22 +136,24 @@ class DropZoneWidget(QFrame):
         self.browse_btn.setFixedWidth(130)
         self.browse_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: #FFFFFF;
-                color: {TEXT_DARK};
-                border: 1px solid {BORDER_STRONG};
+                background-color: #1E293B;
+                color: #F8FAFC;
+                border: 1px solid #334155;
                 border-radius: 6px;
                 font-size: {FONT_BASE};
                 font-weight: 500;
             }}
             QPushButton:hover {{
-                background-color: #F8FAFC;
-                border-color: #94A3B8;
+                background-color: #334155;
+                border-color: #06B6D4;
+                color: #FFFFFF;
             }}
         """)
         btn_container = QHBoxLayout()
         btn_container.setAlignment(Qt.AlignCenter)
         btn_container.addWidget(self.browse_btn)
         layout.addLayout(btn_container)
+
 
         # Subtitle note
         note_lbl = QLabel("Accepts .jpg, .jpeg, .png — any resolution", self)
@@ -284,7 +286,21 @@ class NewScanPage(QWidget):
         modality_row.addWidget(self.modality_override)
         demo_layout.addLayout(modality_row)
 
+        # Location selection row for Hospital & Doctor referrals
+        loc_row = QHBoxLayout()
+        loc_row.setSpacing(6)
+        lbl_loc = QLabel("Location (Referrals):", demo_card)
+        lbl_loc.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY}; font-weight: 500;")
+        loc_row.addWidget(lbl_loc)
+
+        self.patient_loc_input = QComboBox(demo_card)
+        self.patient_loc_input.addItems(["Islamabad", "New York", "Karachi", "Lahore", "London"])
+        self.patient_loc_input.setFixedHeight(28)
+        loc_row.addWidget(self.patient_loc_input, 1)
+        demo_layout.addLayout(loc_row)
+
         left_col.addWidget(demo_card)
+
 
         # Progress bar for asynchronous AI inference
         self.progress_bar = QProgressBar(self.left_panel)
@@ -609,8 +625,10 @@ class NewScanPage(QWidget):
             return
 
         try:
+            self.latest_scan_details["location"] = self.patient_loc_input.currentText()
             pdf_path = generate_pdf_report(self.latest_scan_details)
             user_id = SessionManager.get_user_id() or 1
+
             db.log_activity(user_id, SessionManager.get_username(), "PDF_EXPORTED", f"Scan #{self.current_scan_id}")
             QMessageBox.information(
                 self,

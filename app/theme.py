@@ -1,48 +1,50 @@
 """
 theme.py
 --------
-Clinical Visual Design System & Styling Constants for RadiVision AI.
-Adheres to the modern clinical design tokens specified in the UI/UX mockups:
-  - Primary Brand Navy: #0B3D66
-  - Surface-1 (Card/Container background): #FFFFFF
-  - Surface-2 (Main Canvas background): #F8FAFC
-  - Subtle borders: #E2E8F0, strong/dashed borders: #CBD5E1
-  - Role Badges: Admin (accent blue #E0F2FE / #0B3D66), User (teal tint #E6FFFA / #0D9488)
-  - Status Indicators: Danger/Abnormal (#FEE2E2 / #DC2626), Success/Normal (#DCFCE7 / #16A34A)
+Clinical Cyber-Visual Design System & Styling Constants for RadiVision AI.
+Transforms the desktop application into the modern cyber-clinical theme:
+  - Deep Cyber Canvas Background: #070B14
+  - Dark Surface / Glass Panels: #0E1626 / #111827
+  - Primary Brand Cyan Accent: #06B6D4 (Glow: #22D3EE)
+  - Secondary Clinical Blue: #0284C7 / #2563EB
+  - Crisp Light Typography: #F8FAFC / #94A3B8
+  - Subtle Cyber Slate Borders: #1E293B / #334155
+  - Role Badges: Admin (#082F49 / #38BDF8), User (#042F2E / #2DD4BF)
+  - Status Indicators: Danger/Abnormal (#4C0519 / #EF4444), Success/Normal (#022C22 / #10B981)
 """
 
 # ----------------- Color Palette Constants -----------------
-PRIMARY_NAVY    = "#0B3D66"   # Primary headers, action buttons, active tab indicator
-SECONDARY_BLUE  = "#14507D"   # Links, secondary actions, section titles
-ACCENT_BLUE     = "#0284C7"   # Focus states, informational highlights
-SURFACE_1       = "#FFFFFF"   # Card containers, sidebar, table views, forms
-SURFACE_2       = "#F8FAFC"   # Global main background canvas
-BG_LIGHT        = "#F8FAFC"   # Alias for surface-2
-CARD_BG         = "#FFFFFF"   # Alias for surface-1
-BORDER_COLOR    = "#E2E8F0"   # Subtle card borders and separators
-BORDER_HOVER    = "#CBD5E1"   # Hover borders
-BORDER_STRONG   = "#CBD5E1"   # Dashed upload border, divider lines
+PRIMARY_NAVY    = "#06B6D4"   # Primary Brand Cyan (accent in cyber theme)
+SECONDARY_BLUE  = "#0284C7"   # Sky/Blue
+ACCENT_BLUE     = "#22D3EE"   # Neon Cyan Glow
+SURFACE_1       = "#0E1626"   # Dark card containers, sidebar, tables, forms
+SURFACE_2       = "#070B14"   # Global main cyber canvas background
+BG_LIGHT        = "#070B14"   # Alias for surface-2
+CARD_BG         = "#0E1626"   # Alias for surface-1
+BORDER_COLOR    = "#1E293B"   # Subtle cyber slate card borders and separators
+BORDER_HOVER    = "#334155"   # Hover borders
+BORDER_STRONG   = "#0284C7"   # Cyan highlight borders
 
 # Role & Accent Colors
-BG_ACCENT       = "#E0F2FE"   # Admin badge background
-TEXT_ACCENT     = "#0B3D66"   # Admin badge text
-BG_TEAL         = "#E6FFFA"   # User badge background
-TEXT_TEAL       = "#0D9488"   # User badge text
+BG_ACCENT       = "#082F49"   # Admin badge background
+TEXT_ACCENT     = "#38BDF8"   # Admin badge text
+BG_TEAL         = "#042F2E"   # User badge background
+TEXT_TEAL       = "#2DD4BF"   # User badge text
 
 # Status & Badge Colors
-SUCCESS_GREEN   = "#16A34A"   # Normal / Healthy findings text
-BG_SUCCESS      = "#DCFCE7"   # Normal badge background
-DANGER_RED      = "#DC2626"   # Pneumonia, Fractures (Abnormal) text
-BG_DANGER       = "#FEE2E2"   # Abnormal / Error alert background
-WARNING_AMBER   = "#D97706"   # Inconclusive, Low-Confidence, Review Needed
-BG_WARNING      = "#FEF3C7"   # Inconclusive badge background
-INFO_BLUE       = "#0284C7"   # Informational badges & notices
+SUCCESS_GREEN   = "#10B981"   # Normal / Healthy findings text
+BG_SUCCESS      = "#022C22"   # Normal badge background
+DANGER_RED      = "#EF4444"   # Pneumonia, Fractures (Abnormal) text
+BG_DANGER       = "#4C0519"   # Abnormal alert background
+WARNING_AMBER   = "#F59E0B"   # Inconclusive, Review Needed
+BG_WARNING      = "#451A03"   # Inconclusive badge background
+INFO_BLUE       = "#06B6D4"   # Informational badges & notices
 
 # Typography Colors
-TEXT_DARK       = "#0F172A"   # Primary titles and high-contrast typography
-TEXT_SECONDARY  = "#64748B"   # Subtitles, captions, metadata
-TEXT_MUTED      = "#94A3B8"   # Placeholder hints, tertiary text
-TEXT_LIGHT      = "#FFFFFF"   # Text on dark navy backgrounds
+TEXT_DARK       = "#F8FAFC"   # Primary high-contrast typography
+TEXT_SECONDARY  = "#94A3B8"   # Subtitles, captions, metadata
+TEXT_MUTED      = "#64748B"   # Placeholder hints, tertiary text
+TEXT_LIGHT      = "#FFFFFF"   # Text on bright accents
 
 # ----------------- Font Size Tokens -----------------
 FONT_XS   = "9px"    # Footer notes, minimal captions, subtle badges
@@ -56,25 +58,25 @@ FONT_XL   = "16px"   # Stat card big numbers (dashboard only)
 GLOBAL_STYLESHEET = f"""
 QMainWindow, QDialog {{
     background-color: {SURFACE_2};
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', system-ui, sans-serif;
     font-size: {FONT_BASE};
     color: {TEXT_DARK};
 }}
 
 QWidget {{
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', system-ui, sans-serif;
     font-size: {FONT_BASE};
     color: {TEXT_DARK};
 }}
 
 QLabel {{
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', system-ui, sans-serif;
     color: {TEXT_DARK};
 }}
 
 /* Top Navigation Bar */
 #TopBar {{
-    background-color: {SURFACE_1};
+    background-color: #0D1322;
     color: {TEXT_DARK};
     min-height: 48px;
     max-height: 54px;
@@ -88,7 +90,7 @@ QLabel {{
 
 /* Left Navigation Sidebar */
 #Sidebar {{
-    background-color: {SURFACE_1};
+    background-color: #0D1322;
     border-right: 1px solid {BORDER_COLOR};
 }}
 
@@ -99,24 +101,25 @@ QLabel {{
     padding: 7px 10px;
     font-size: {FONT_BASE};
     font-weight: 500;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 6px;
     margin: 1px 6px;
 }}
 
 #Sidebar QPushButton:hover {{
-    background-color: #F1F5F9;
-    color: {TEXT_DARK};
+    background-color: #1E293B;
+    color: #F8FAFC;
 }}
 
 #Sidebar QPushButton:checked, #Sidebar QPushButton[active="true"] {{
-    background-color: #E2E8F0;
-    color: {TEXT_DARK};
+    background-color: rgba(6, 182, 212, 0.15);
+    color: {ACCENT_BLUE};
+    border: 1px solid rgba(6, 182, 212, 0.4);
     font-weight: 600;
 }}
 
 /* Cards & Surface Panels */
-QFrame.card, QWidget.card {{
+QFrame.card, QWidget.card, QFrame#Card, QFrame.panel {{
     background-color: {SURFACE_1};
     border: 1px solid {BORDER_COLOR};
     border-radius: 8px;
@@ -125,19 +128,19 @@ QFrame.card, QWidget.card {{
 
 /* Input Fields & Combos */
 QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QComboBox {{
-    background-color: #FFFFFF;
+    background-color: #0F172A;
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
     padding: 6px 10px;
     font-size: {FONT_BASE};
     color: {TEXT_DARK};
-    selection-background-color: {PRIMARY_NAVY};
+    selection-background-color: #0891B2;
     selection-color: #FFFFFF;
 }}
 
 QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QComboBox:focus {{
     border: 1.5px solid {PRIMARY_NAVY};
-    background-color: #FFFFFF;
+    background-color: #0F172A;
 }}
 
 QComboBox::drop-down {{
@@ -145,59 +148,73 @@ QComboBox::drop-down {{
     subcontrol-position: top right;
     width: 24px;
     border-left: 1px solid {BORDER_COLOR};
+    background-color: #0F172A;
+}}
+
+QComboBox QAbstractItemView {{
+    background-color: #0E1626;
+    border: 1px solid {BORDER_COLOR};
+    color: {TEXT_DARK};
+    selection-background-color: #082F49;
+    selection-color: #38BDF8;
 }}
 
 /* Buttons */
 QPushButton {{
-    background-color: {PRIMARY_NAVY};
+    background-color: #0891B2;
     color: {TEXT_LIGHT};
-    border: none;
+    border: 1px solid rgba(6, 182, 212, 0.3);
     border-radius: 6px;
     padding: 7px 14px;
     font-size: {FONT_BASE};
-    font-weight: 500;
+    font-weight: 600;
 }}
 
 QPushButton:hover {{
-    background-color: {SECONDARY_BLUE};
+    background-color: #06B6D4;
+    border: 1px solid {ACCENT_BLUE};
 }}
 
 QPushButton:pressed {{
-    background-color: #072642;
+    background-color: #0E7490;
 }}
 
 QPushButton:disabled {{
-    background-color: #E2E8F0;
-    color: #94A3B8;
+    background-color: #1E293B;
+    border: 1px solid #1E293B;
+    color: #64748B;
 }}
 
 QPushButton.secondary {{
-    background-color: #FFFFFF;
+    background-color: #1E293B;
     color: {TEXT_DARK};
-    border: 1px solid {BORDER_STRONG};
+    border: 1px solid {BORDER_HOVER};
 }}
 
 QPushButton.secondary:hover {{
-    background-color: #F8FAFC;
-    border-color: #94A3B8;
+    background-color: #334155;
+    border-color: #475569;
+    color: #FFFFFF;
 }}
 
 QPushButton.danger {{
     background-color: {DANGER_RED};
     color: white;
+    border: none;
 }}
 
 QPushButton.danger:hover {{
-    background-color: #B91C1C;
+    background-color: #DC2626;
 }}
 
 QPushButton.success {{
     background-color: {SUCCESS_GREEN};
     color: white;
+    border: none;
 }}
 
 QPushButton.success:hover {{
-    background-color: #15803D;
+    background-color: #059669;
 }}
 
 /* Tables */
@@ -206,13 +223,14 @@ QTableWidget, QTableView {{
     border: 1px solid {BORDER_COLOR};
     border-radius: 8px;
     gridline-color: {BORDER_COLOR};
-    selection-background-color: #E0F2FE;
-    selection-color: {TEXT_DARK};
+    selection-background-color: #082F49;
+    selection-color: #38BDF8;
+    color: {TEXT_DARK};
     font-size: {FONT_BASE};
 }}
 
 QHeaderView::section {{
-    background-color: #F8FAFC;
+    background-color: #0B1120;
     color: {TEXT_SECONDARY};
     font-weight: 600;
     font-size: {FONT_SM};
@@ -224,20 +242,20 @@ QHeaderView::section {{
 /* Scrollbars */
 QScrollBar:vertical {{
     border: none;
-    background: #F1F5F9;
+    background: #070B14;
     width: 8px;
     margin: 0;
     border-radius: 4px;
 }}
 
 QScrollBar::handle:vertical {{
-    background: #CBD5E1;
+    background: #1E293B;
     min-height: 24px;
     border-radius: 4px;
 }}
 
 QScrollBar::handle:vertical:hover {{
-    background: #94A3B8;
+    background: #06B6D4;
 }}
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
@@ -246,25 +264,30 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
 
 QScrollBar:horizontal {{
     border: none;
-    background: #F1F5F9;
+    background: #070B14;
     height: 8px;
     margin: 0;
     border-radius: 4px;
 }}
 
 QScrollBar::handle:horizontal {{
-    background: #CBD5E1;
+    background: #1E293B;
     min-width: 24px;
     border-radius: 4px;
+}}
+
+QScrollBar::handle:horizontal:hover {{
+    background: #06B6D4;
 }}
 """
 
 def get_role_badge_style(role: str) -> str:
-    """Returns CSS for role badge (Admin in accent blue, User in teal)."""
+    """Returns CSS for role badge (Admin in cyan, User in teal)."""
     if role.strip().lower() == "admin":
         return f"""
             background-color: {BG_ACCENT};
             color: {TEXT_ACCENT};
+            border: 1px solid #0284C7;
             border-radius: 4px;
             padding: 2px 8px;
             font-size: {FONT_SM};
@@ -274,6 +297,7 @@ def get_role_badge_style(role: str) -> str:
         return f"""
             background-color: {BG_TEAL};
             color: {TEXT_TEAL};
+            border: 1px solid #0D9488;
             border-radius: 4px;
             padding: 2px 8px;
             font-size: {FONT_SM};
@@ -285,21 +309,21 @@ def get_status_badge_style(status_type: str) -> str:
     status = status_type.lower()
     if "normal" in status or "healthy" in status:
         bg = BG_SUCCESS
-        fg = SUCCESS_GREEN
-        border = "#86EFAC"
+        fg = "#34D399"
+        border = "#059669"
     elif any(term in status for term in ["abnormal", "pneumonia", "fracture", "lesion", "danger", "error"]):
         bg = BG_DANGER
-        fg = DANGER_RED
-        border = "#FCA5A5"
+        fg = "#F87171"
+        border = "#DC2626"
     else:
         bg = BG_WARNING
-        fg = WARNING_AMBER
-        border = "#FCD34D"
+        fg = "#FBBF24"
+        border = "#D97706"
         
     return f"""
         background-color: {bg};
         color: {fg};
-        border: 0.5px solid {border};
+        border: 1px solid {border};
         border-radius: 5px;
         padding: 2px 8px;
         font-weight: 600;
