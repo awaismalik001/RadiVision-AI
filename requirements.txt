@@ -14,11 +14,20 @@ pandas>=2.0.0
 scikit-learn>=1.3.0
 matplotlib>=3.7.0
 
-# Desktop Graphical Interface
-PyQt5>=5.15.10
+# REST API & Web Backend
+fastapi>=0.100.0
+uvicorn>=0.20.0
+python-multipart>=0.0.6
+requests>=2.31.0
+python-dotenv>=1.0.0
 
-# Security, Hashing & Relational Data
+# Security, Encryption & Hashing
 bcrypt>=4.1.2
+cryptography>=42.0.0
 
-# Automated Clinical PDF Reporting
+# Automated Clinical PDF Reporting & Excel Data Export
 reportlab>=4.0.0
+openpyxl>=3.1.2
+
+# Generative AI Integration (Gemini AI Vision & Clinical Diagnostic Pipeline)
+google-genai>=1.0.0

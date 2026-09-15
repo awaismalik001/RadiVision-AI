@@ -56,15 +56,58 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         except Exception:
             return False
 
+import time
+
+# Rate limiting state: username_or_ip -> list of failure timestamps
+_FAILED_LOGIN_ATTEMPTS: Dict[str, List[float]] = {}
+RATE_LIMIT_WINDOW_SECONDS = 300  # 5 minutes
+MAX_FAILED_ATTEMPTS = 5
+
+def is_rate_limited(identifier: str) -> Tuple[bool, int]:
+    """
+    Checks whether an identifier (username or IP) has exceeded failed login threshold.
+    Returns (is_limited, remaining_seconds).
+    """
+    now = time.time()
+    attempts = _FAILED_LOGIN_ATTEMPTS.get(identifier, [])
+    # Filter attempts within the sliding window
+    valid_attempts = [t for t in attempts if now - t < RATE_LIMIT_WINDOW_SECONDS]
+    _FAILED_LOGIN_ATTEMPTS[identifier] = valid_attempts
+
+    if len(valid_attempts) >= MAX_FAILED_ATTEMPTS:
+        earliest = valid_attempts[0]
+        remaining = int(RATE_LIMIT_WINDOW_SECONDS - (now - earliest))
+        return True, max(1, remaining)
+    return False, 0
+
+def record_failed_attempt(identifier: str):
+    """Records a failed login attempt for rate limiting."""
+    now = time.time()
+    if identifier not in _FAILED_LOGIN_ATTEMPTS:
+        _FAILED_LOGIN_ATTEMPTS[identifier] = []
+    _FAILED_LOGIN_ATTEMPTS[identifier].append(now)
+
+def clear_failed_attempts(identifier: str):
+    """Clears failed attempts upon successful login."""
+    if identifier in _FAILED_LOGIN_ATTEMPTS:
+        del _FAILED_LOGIN_ATTEMPTS[identifier]
+
 def validate_password_complexity(password: str) -> Tuple[bool, str]:
-    """Ensures password meets minimum security criteria: >= 8 characters, letters & numbers."""
+    """
+    Enforces strict hospital-grade password protocols:
+    >= 8 characters, at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special symbol.
+    """
     if len(password) < 8:
         return False, "Password must be at least 8 characters long."
-    if not re.search(r"[A-Za-z]", password):
-        return False, "Password must contain at least one alphabetical letter."
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter (A-Z)."
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter (a-z)."
     if not re.search(r"\d", password):
-        return False, "Password must contain at least one numeric digit."
-    return True, "Password is secure."
+        return False, "Password must contain at least one numeric digit (0-9)."
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password):
+        return False, "Password must contain at least one special character (!@#$%^&* etc.)."
+    return True, "Password meets clinical security standards."
 
 def validate_email(email: str) -> bool:
     """Validates email format."""
@@ -103,32 +146,108 @@ class SessionManager:
     def logout(cls):
         cls._current_user = None
 
-def authenticate_user(username: str, password: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+def authenticate_user(username: str, password: str, client_ip: str = "127.0.0.1") -> Tuple[bool, str, Optional[Dict[str, Any]]]:
     """
-    Authenticates a user against the SQLite database.
+    Authenticates a user against the SQLite database with anti-brute-force rate-limiting.
     Returns (success, message, user_dict).
     """
     from app.database import db
-    
+
     username = username.strip()
+    rate_key = f"{username}_{client_ip}"
+
+    # Check rate limiting
+    limited, seconds_left = is_rate_limited(rate_key)
+    if limited:
+        return False, f"Access blocked: Too many failed login attempts. Please wait {seconds_left} seconds before trying again.", None
+
     user = db.get_user_by_username(username)
-    
-    # Generic error message to prevent account enumeration
     generic_error = "Invalid username or password."
 
     if not user:
-        db.log_activity(None, username, "FAILED_LOGIN", "Attempt with non-existent username.")
+        record_failed_attempt(rate_key)
+        db.log_activity(None, username, "FAILED_LOGIN", f"Attempt with non-existent username from {client_ip}.")
         return False, generic_error, None
 
     if not user.get("is_active", 1):
         db.log_activity(user["user_id"], username, "FAILED_LOGIN", "Attempt on deactivated account.")
-        return False, "This account has been deactivated. Please contact an Administrator.", None
+        return False, "This account has been deactivated. Please contact a System Administrator.", None
 
     if not verify_password(password, user["password_hash"]):
-        db.log_activity(user["user_id"], username, "FAILED_LOGIN", "Incorrect password provided.")
+        record_failed_attempt(rate_key)
+        db.log_activity(user["user_id"], username, "FAILED_LOGIN", f"Incorrect password provided from {client_ip}.")
         return False, generic_error, None
 
-    # Login successful
-    SessionManager.set_user(user)
+    # Login successful - reset rate limit counter
+    clear_failed_attempts(rate_key)
+    safe_user = {
+        "user_id": user["user_id"],
+        "full_name": user["full_name"],
+        "username": user["username"],
+        "email": user["email"],
+        "role": user["role"],
+        "is_active": user["is_active"]
+    }
+    SessionManager.set_user(safe_user)
     db.log_activity(user["user_id"], username, "SUCCESSFUL_LOGIN", f"Role: {user['role']}")
-    return True, "Authentication successful.", user
+    return True, "Authentication successful.", safe_user
+
+def admin_update_credentials(
+    current_user: Dict[str, Any],
+    target_user_id: int,
+    new_username: Optional[str] = None,
+    new_password: Optional[str] = None,
+    new_full_name: Optional[str] = None,
+    new_email: Optional[str] = None,
+    new_role: Optional[str] = None,
+    new_is_active: Optional[bool] = None
+) -> Tuple[bool, str]:
+    """
+    Enforces Phase 4 security rule: ONLY administrators are authorized to update
+    user credentials (usernames, passwords, and permissions).
+    """
+    from app.database import db
+
+    # 1. Strict Administrator Authorization Check
+    if not current_user or current_user.get("role") != "Admin":
+        return False, "Access Denied: Credential updates are strictly restricted to System Administrators."
+
+    target_user = db.get_user_by_id(target_user_id)
+    if not target_user:
+        return False, f"Target user ID #{target_user_id} does not exist."
+
+    # 2. If updating username, check uniqueness
+    if new_username and new_username.strip() != target_user["username"]:
+        existing = db.get_user_by_username(new_username.strip())
+        if existing and existing["user_id"] != target_user_id:
+            return False, f"Username '{new_username}' is already in use by another account."
+
+    # 3. If updating password, enforce clinical complexity
+    hashed_pw = None
+    if new_password:
+        valid_pw, pw_msg = validate_password_complexity(new_password)
+        if not valid_pw:
+            return False, pw_msg
+        hashed_pw = hash_password(new_password)
+
+    # 4. Commit updates to SQLite
+    db.update_user_credentials(
+        user_id=target_user_id,
+        username=new_username.strip() if new_username else None,
+        full_name=new_full_name.strip() if new_full_name else None,
+        email=new_email.strip() if new_email else None,
+        password_hash=hashed_pw,
+        role=new_role if new_role in ("Admin", "User") else None,
+        is_active=new_is_active
+    )
+
+    admin_name = current_user.get("username", "Admin")
+    db.log_activity(
+        current_user.get("user_id"),
+        admin_name,
+        "CREDENTIAL_UPDATE",
+        f"Admin updated credentials for user ID #{target_user_id} ({target_user['username']})."
+    )
+
+    return True, f"Credentials for user #{target_user_id} updated successfully by Administrator."
+

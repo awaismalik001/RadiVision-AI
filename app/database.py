@@ -10,6 +10,7 @@ import os
 import sqlite3
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+from app.encryption import pacs_cipher
 
 DB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "database")
 DB_PATH = os.path.join(DB_DIR, "xray_system.db")
@@ -169,14 +170,46 @@ class DatabaseManager:
             cursor.execute("UPDATE users SET role = ? WHERE user_id = ?;", (role, user_id))
             conn.commit()
 
+    def update_user_credentials(self, user_id: int, username: Optional[str] = None, full_name: Optional[str] = None,
+                                email: Optional[str] = None, password_hash: Optional[str] = None,
+                                role: Optional[str] = None, is_active: Optional[bool] = None):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            updates = []
+            params = []
+            if username:
+                updates.append("username = ?")
+                params.append(username.strip())
+            if full_name:
+                updates.append("full_name = ?")
+                params.append(full_name.strip())
+            if email:
+                updates.append("email = ?")
+                params.append(email.strip())
+            if password_hash:
+                updates.append("password_hash = ?")
+                params.append(password_hash)
+            if role:
+                updates.append("role = ?")
+                params.append(role)
+            if is_active is not None:
+                updates.append("is_active = ?")
+                params.append(1 if is_active else 0)
+            if updates:
+                params.append(user_id)
+                cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE user_id = ?;", tuple(params))
+                conn.commit()
+
     # ----------------- Patient Management -----------------
     def create_patient(self, name: str, age: int, gender: str, contact: str = "") -> int:
         with self.get_connection() as conn:
             cursor = conn.cursor()
+            enc_name = pacs_cipher.encrypt(name.strip())
+            enc_contact = pacs_cipher.encrypt(contact.strip()) if contact else ""
             cursor.execute("""
                 INSERT INTO patients (name, age, gender, contact)
                 VALUES (?, ?, ?, ?);
-            """, (name.strip(), age, gender, contact.strip()))
+            """, (enc_name, age, gender, enc_contact))
             conn.commit()
             return cursor.lastrowid
 
@@ -185,13 +218,24 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM patients WHERE patient_id = ?;", (patient_id,))
             row = cursor.fetchone()
-            return dict(row) if row else None
+            if not row:
+                return None
+            p = dict(row)
+            p["name"] = pacs_cipher.decrypt(p.get("name"))
+            p["contact"] = pacs_cipher.decrypt(p.get("contact"))
+            return p
 
     def get_all_patients(self) -> List[Dict[str, Any]]:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM patients ORDER BY created_at DESC;")
-            return [dict(row) for row in cursor.fetchall()]
+            patients = []
+            for row in cursor.fetchall():
+                p = dict(row)
+                p["name"] = pacs_cipher.decrypt(p.get("name"))
+                p["contact"] = pacs_cipher.decrypt(p.get("contact"))
+                patients.append(p)
+            return patients
 
     # ----------------- Scan & Findings Management -----------------
     def create_scan(self, patient_id: int, user_id: int, scan_type: str, body_region: Optional[str],
@@ -252,7 +296,11 @@ class DatabaseManager:
                     ORDER BY s.scan_date DESC
                     LIMIT ?;
                 """, (limit,))
-            return [dict(row) for row in cursor.fetchall()]
+            rows = [dict(row) for row in cursor.fetchall()]
+            for r in rows:
+                if "patient_name" in r:
+                    r["patient_name"] = pacs_cipher.decrypt(r["patient_name"])
+            return rows
 
     def get_scan_details(self, scan_id: int) -> Optional[Dict[str, Any]]:
         with self.get_connection() as conn:
@@ -269,6 +317,8 @@ class DatabaseManager:
             if not row:
                 return None
             scan_dict = dict(row)
+            scan_dict["patient_name"] = pacs_cipher.decrypt(scan_dict.get("patient_name"))
+            scan_dict["patient_contact"] = pacs_cipher.decrypt(scan_dict.get("patient_contact"))
             cursor.execute("SELECT * FROM findings WHERE scan_id = ?;", (scan_id,))
             scan_dict["findings"] = [dict(f) for f in cursor.fetchall()]
             return scan_dict
@@ -345,9 +395,11 @@ class DatabaseManager:
                 query += " WHERE s.user_id = ?"
                 params.append(user_id)
             query += " ORDER BY s.scan_date DESC LIMIT ?;"
-            params.append(limit)
-            cursor.execute(query, tuple(params))
-            return [dict(row) for row in cursor.fetchall()]
+            rows = [dict(row) for row in cursor.fetchall()]
+            for r in rows:
+                if "patient_name" in r:
+                    r["patient_name"] = pacs_cipher.decrypt(r["patient_name"])
+            return rows
 
 # Global singleton instance
 db = DatabaseManager()
