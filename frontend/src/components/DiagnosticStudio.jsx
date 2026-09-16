@@ -30,6 +30,7 @@ const getMediaUrl = (url) => {
 };
 
 export default function DiagnosticStudio({ currentUser }) {
+  const isAdmin = currentUser?.role === 'Admin';
   // Modality & Demographics State
   const [modality, setModality] = useState("Bone"); // 'Bone' or 'Chest'
   const activeUserName = currentUser?.full_name || currentUser?.username || "Active User";
@@ -222,22 +223,24 @@ export default function DiagnosticStudio({ currentUser }) {
                 <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
                 <span>Radiographic Ingestion</span>
               </h2>
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => handleLoadSample("Bone")}
-                  className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded transition-colors cursor-pointer"
-                >
-                  Load Bone Sample
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLoadSample("Chest")}
-                  className="text-[11px] font-semibold text-teal-600 hover:text-teal-800 bg-teal-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
-                >
-                  Load Chest Sample
-                </button>
-              </div>
+              {isAdmin && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handleLoadSample("Bone")}
+                    className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                  >
+                    Load Bone Sample
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadSample("Chest")}
+                    className="text-[11px] font-semibold text-teal-600 hover:text-teal-800 bg-teal-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                  >
+                    Load Chest Sample
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Dropzone */}
