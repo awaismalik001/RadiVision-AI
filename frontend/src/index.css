@@ -15,6 +15,16 @@
   --color-medical-danger: #dc2626;
   --color-medical-success: #16a34a;
   --color-medical-warning: #d97706;
+
+  /* PACS-safe Desktop Typography Scale Tokens */
+  --font-size-micro: 9px;
+  --font-size-badge: 10px;
+  --font-size-label: 11px;
+  --font-size-cell: 13px;
+  --font-size-body: 13px;
+  --font-size-card-title: 14.6px;
+  --font-size-page-title: 16.25px;
+  --font-size-kpi: 22px;
 }
 
 html {

@@ -131,7 +131,7 @@ export default function AdminDashboard({ currentUser }) {
           <button
             onClick={fetchDashboardData}
             disabled={isLoading}
-            className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium text-xs flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-sm flex items-center space-x-1.5 shadow-sm transition-colors cursor-pointer"
             title="Refresh analytics and logs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />
@@ -141,7 +141,7 @@ export default function AdminDashboard({ currentUser }) {
           <button
             onClick={handleExportExcel}
             disabled={isExporting}
-            className="px-3.5 py-1.5 rounded-lg bg-[#1982bf] hover:bg-[#156ea3] text-white font-semibold text-xs flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
+            className="px-3.5 py-1.5 rounded-lg bg-[#1982bf] hover:bg-[#156ea3] text-white font-semibold text-sm flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
           >
             {isExporting ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -167,7 +167,7 @@ export default function AdminDashboard({ currentUser }) {
               </div>
             </div>
             <div className="mt-2">
-              <div className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">{totalScans}</div>
+              <div className="text-2xl md:text-[22px] font-bold font-mono text-slate-900 tracking-tight">{totalScans}</div>
               <div className="text-[11px] text-slate-500 mt-0.5 flex items-center space-x-1">
                 <span className="font-semibold text-blue-600">{analytics?.chest_count ?? 0} Chest</span>
                 <span>•</span>
@@ -185,7 +185,7 @@ export default function AdminDashboard({ currentUser }) {
               </div>
             </div>
             <div className="mt-2">
-              <div className="text-lg md:text-xl font-bold text-rose-600 tracking-tight">{abnormalRate}%</div>
+              <div className="text-2xl md:text-[22px] font-bold font-mono text-rose-600 tracking-tight">{abnormalRate}%</div>
               <div className="text-[11px] text-slate-500 mt-0.5">
                 {abnormalScans} positive cases requiring clinical triage
               </div>
@@ -201,7 +201,7 @@ export default function AdminDashboard({ currentUser }) {
               </div>
             </div>
             <div className="mt-2">
-              <div className="text-lg md:text-xl font-bold text-emerald-600 tracking-tight">{normalScans}</div>
+              <div className="text-2xl md:text-[22px] font-bold font-mono text-emerald-600 tracking-tight">{normalScans}</div>
               <div className="text-[11px] text-slate-500 mt-0.5">
                 Clear pulmonary fields & intact cortices
               </div>
@@ -217,7 +217,7 @@ export default function AdminDashboard({ currentUser }) {
               </div>
             </div>
             <div className="mt-2">
-              <div className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">{analytics?.reports_exported ?? totalScans}</div>
+              <div className="text-2xl md:text-[22px] font-bold font-mono text-slate-900 tracking-tight">{analytics?.reports_exported ?? totalScans}</div>
               <div className="text-[11px] text-slate-500 mt-0.5 flex items-center space-x-1">
                 <span>Google Maps GPS Anchored</span>
               </div>
@@ -264,7 +264,7 @@ export default function AdminDashboard({ currentUser }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={activeSubTab === 'scans' ? "Search patient, ID, diagnosis..." : "Search action or username..."}
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
             />
           </div>
         </div>
@@ -273,9 +273,9 @@ export default function AdminDashboard({ currentUser }) {
         {activeSubTab === 'scans' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
                     <th className="py-2.5 px-3">Patient MRN / Name</th>
                     <th className="py-2.5 px-3">Demographics</th>
                     <th className="py-2.5 px-3">Modality</th>
@@ -299,24 +299,24 @@ export default function AdminDashboard({ currentUser }) {
 
                       return (
                         <tr key={s.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-2 px-3">
-                            <div className="font-semibold text-slate-900 text-xs">{s.patient_name || 'Anonymous Patient'}</div>
+                          <td className="py-2.5 px-3">
+                            <div className="font-semibold text-slate-900 text-[13px]">{s.patient_name || 'Anonymous Patient'}</div>
                             <div className="text-[10px] text-slate-500 font-mono">
                               {s.patient_contact || `RV-${(s.patient_id || 100).toString().padStart(6, '0')}`}
                             </div>
                           </td>
-                          <td className="py-2 px-3 text-slate-600 text-xs">
+                          <td className="py-2.5 px-3 text-slate-600 text-[13px]">
                             {s.patient_age} yrs • {s.patient_gender}
                           </td>
-                          <td className="py-2 px-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                               s.scan_type === 'Chest' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'
                             }`}>
                               {s.scan_type} Radiograph
                             </span>
                           </td>
-                          <td className="py-2 px-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                          <td className="py-2.5 px-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-semibold ${
                               isAbnormal ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                             }`}>
                               {isAbnormal ? (
@@ -327,10 +327,10 @@ export default function AdminDashboard({ currentUser }) {
                               {pred}
                             </span>
                           </td>
-                          <td className="py-2 px-3 font-mono font-semibold text-xs text-slate-700">
+                          <td className="py-2.5 px-3 font-mono font-semibold text-[13px] text-slate-700">
                             {conf}%
                           </td>
-                          <td className="py-2 px-3 text-slate-500 text-xs font-mono">
+                          <td className="py-2.5 px-3 text-slate-500 text-[12px] font-mono">
                             {s.scan_date ? new Date(s.scan_date).toLocaleString() : 'Recent'}
                           </td>
                         </tr>
@@ -347,9 +347,9 @@ export default function AdminDashboard({ currentUser }) {
         {activeSubTab === 'logs' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
                     <th className="py-2.5 px-3">Log ID</th>
                     <th className="py-2.5 px-3">Timestamp</th>
                     <th className="py-2.5 px-3">User</th>
@@ -370,17 +370,17 @@ export default function AdminDashboard({ currentUser }) {
                       const isUpdate = l.action === 'CREDENTIAL_UPDATE';
                       return (
                         <tr key={l.log_id || idx} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-2 px-3 font-mono text-[11px] text-slate-400">
+                          <td className="py-2.5 px-3 font-mono text-[11px] text-slate-400">
                             #{l.log_id}
                           </td>
-                          <td className="py-2 px-3 text-xs font-mono text-slate-500">
+                          <td className="py-2.5 px-3 text-[12px] font-mono text-slate-500">
                             {l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A'}
                           </td>
-                          <td className="py-2 px-3 font-semibold text-xs text-slate-900">
+                          <td className="py-2.5 px-3 font-semibold text-[13px] text-slate-900">
                             {l.username || 'SYSTEM'}
                           </td>
-                          <td className="py-2 px-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${
                               isAuthFail ? 'bg-rose-100 text-rose-800' :
                               isUpdate ? 'bg-amber-100 text-amber-800' :
                               'bg-slate-100 text-slate-800'
@@ -388,7 +388,7 @@ export default function AdminDashboard({ currentUser }) {
                               {l.action}
                             </span>
                           </td>
-                          <td className="py-2 px-3 text-slate-600 text-xs">
+                          <td className="py-2.5 px-3 text-slate-600 text-[13px]">
                             {l.details}
                           </td>
                         </tr>

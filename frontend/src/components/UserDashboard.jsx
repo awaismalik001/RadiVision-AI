@@ -106,11 +106,11 @@ export default function UserDashboard({ currentUser, onNavigate }) {
         <div className="flex items-center space-x-2 self-start md:self-auto">
           <button
             onClick={() => onNavigate('studio')}
-            className="px-3.5 py-1.5 rounded-lg bg-[#1982bf] hover:bg-[#156ea3] text-white font-semibold text-xs flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
+            className="px-3.5 py-1.5 rounded-lg bg-[#1982bf] hover:bg-[#156ea3] text-white font-semibold text-sm flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
           >
-            <Stethoscope className="w-3.5 h-3.5" />
+            <Stethoscope className="w-4 h-4" />
             <span>Launch AI Diagnostic Studio</span>
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -203,23 +203,23 @@ export default function UserDashboard({ currentUser, onNavigate }) {
         {/* Telemetry KPI Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Scans</div>
-            <div className="text-lg md:text-xl font-bold text-slate-900 mt-0.5">{totalCount}</div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Total Scans</div>
+            <div className="text-2xl md:text-[22px] font-bold font-mono text-slate-900 mt-0.5">{totalCount}</div>
             <div className="text-[10px] text-slate-400 mt-0.5">Processed studies</div>
           </div>
           <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Normal Cases</div>
-            <div className="text-lg md:text-xl font-bold text-emerald-600 mt-0.5">{normalCount}</div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Normal Cases</div>
+            <div className="text-2xl md:text-[22px] font-bold font-mono text-emerald-600 mt-0.5">{normalCount}</div>
             <div className="text-[10px] text-emerald-700 mt-0.5">Unremarkable anatomy</div>
           </div>
           <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Abnormal Triaged</div>
-            <div className="text-lg md:text-xl font-bold text-rose-600 mt-0.5">{abnormalCount}</div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Abnormal Triaged</div>
+            <div className="text-2xl md:text-[22px] font-bold font-mono text-rose-600 mt-0.5">{abnormalCount}</div>
             <div className="text-[10px] text-rose-700 mt-0.5">Flagged for review</div>
           </div>
           <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">ViT Speed</div>
-            <div className="text-lg md:text-xl font-bold text-[#1982bf] mt-0.5 font-mono">1.2s</div>
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">ViT Speed</div>
+            <div className="text-2xl md:text-[22px] font-bold font-mono text-[#1982bf] mt-0.5">1.2s</div>
             <div className="text-[10px] text-blue-700 mt-0.5">Average inference latency</div>
           </div>
         </div>
@@ -229,13 +229,13 @@ export default function UserDashboard({ currentUser, onNavigate }) {
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Clock className="w-3.5 h-3.5 text-[#1982bf]" />
-              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
                 Recent Clinical Studies
               </h2>
             </div>
             <button
               onClick={() => onNavigate('my-history')}
-              className="text-[11px] font-semibold text-[#1982bf] hover:underline cursor-pointer flex items-center space-x-1"
+              className="text-xs font-semibold text-[#1982bf] hover:underline cursor-pointer flex items-center space-x-1"
             >
               <span>View All Scans</span>
               <ArrowRight className="w-3 h-3" />
@@ -245,7 +245,7 @@ export default function UserDashboard({ currentUser, onNavigate }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
                   <th className="py-2.5 px-3">Patient / ID</th>
                   <th className="py-2.5 px-3">Modality</th>
                   <th className="py-2.5 px-3">Primary Finding</th>
@@ -268,21 +268,21 @@ export default function UserDashboard({ currentUser, onNavigate }) {
 
                     return (
                       <tr key={scan.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2 px-3">
-                          <div className="font-semibold text-slate-900 text-xs">{scan.patient_name || 'Anonymous Patient'}</div>
-                          <div className="text-[10px] text-slate-500 font-mono">
+                        <td className="py-2.5 px-3">
+                          <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
+                          <div className="text-[10px] font-mono text-slate-500">
                             {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
                           </div>
                         </td>
-                        <td className="py-2 px-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        <td className="py-2.5 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
                             scan.scan_type === 'Chest' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'
                           }`}>
                             {scan.scan_type}
                           </span>
                         </td>
-                        <td className="py-2 px-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        <td className="py-2.5 px-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-semibold ${
                             isAbnormal ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
                           }`}>
                             {isAbnormal ? (
@@ -293,14 +293,14 @@ export default function UserDashboard({ currentUser, onNavigate }) {
                             {pred}
                           </span>
                         </td>
-                        <td className="py-2 px-3 font-mono font-semibold text-xs text-slate-700">
+                        <td className="py-2.5 px-3 font-mono font-semibold text-[13px] text-slate-700">
                           {conf}%
                         </td>
-                        <td className="py-2 px-3 text-right">
+                        <td className="py-2.5 px-3 text-right">
                           <button
                             onClick={() => handleDownloadPdf(scan)}
                             disabled={downloadingId === scan.scan_id}
-                            className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-[#1982bf] hover:bg-[#156ea3] text-white text-[11px] font-semibold shadow-sm transition-all cursor-pointer"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-[#1982bf] hover:bg-[#156ea3] text-white text-[13px] font-semibold shadow-sm transition-all cursor-pointer"
                           >
                             {downloadingId === scan.scan_id ? (
                               <RefreshCw className="w-3 h-3 animate-spin" />

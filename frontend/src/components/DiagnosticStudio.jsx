@@ -316,7 +316,7 @@ export default function DiagnosticStudio({ currentUser }) {
                   type="text"
                   value={patientId}
                   onChange={(e) => setPatientId(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -329,7 +329,7 @@ export default function DiagnosticStudio({ currentUser }) {
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="e.g. New York, Islamabad"
-                    className="w-full pl-7 pr-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-7 pr-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -342,12 +342,12 @@ export default function DiagnosticStudio({ currentUser }) {
                     value={patientAge}
                     onChange={(e) => setPatientAge(Number(e.target.value))}
                     placeholder="Age"
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <select
                     value={patientGender}
                     onChange={(e) => setPatientGender(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Female">Female</option>
                     <option value="Male">Male</option>
@@ -361,7 +361,7 @@ export default function DiagnosticStudio({ currentUser }) {
             <button
               onClick={handleAnalyze}
               disabled={analyzing || (!selectedFile && !previewUrl)}
-              className={`w-full py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center space-x-2 shadow-sm transition-all cursor-pointer ${
+              className={`w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center space-x-2 shadow-sm transition-all cursor-pointer ${
                 analyzing || (!selectedFile && !previewUrl)
                   ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                   : "bg-[#0B1727] hover:bg-slate-800 text-white shadow-blue-900/10"

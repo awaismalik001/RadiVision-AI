@@ -121,17 +121,17 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
         <div className="flex items-center space-x-2 self-start md:self-auto">
           <button
             onClick={fetchHistory}
-            className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors flex items-center space-x-1.5 cursor-pointer shadow-sm"
+            className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-sm font-semibold text-slate-700 transition-colors flex items-center space-x-1.5 cursor-pointer shadow-sm"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#1982bf]' : ''}`} />
             <span>Refresh</span>
           </button>
           <button
             onClick={onNavigateStudio}
-            className="px-3.5 py-1.5 rounded-lg bg-[#1982bf] hover:bg-[#156ea3] text-xs font-semibold text-white transition-colors flex items-center space-x-1.5 cursor-pointer shadow-sm"
+            className="px-3.5 py-1.5 rounded-lg bg-[#1982bf] hover:bg-[#156ea3] text-sm font-semibold text-white transition-colors flex items-center space-x-1.5 cursor-pointer shadow-sm"
           >
             <span>New Scan Ingestion</span>
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -146,7 +146,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
               placeholder="Search by Patient, MRN, or Diagnosis..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1982bf] focus:bg-white transition-all"
+              className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1982bf] focus:bg-white transition-all"
             />
           </div>
 
@@ -174,7 +174,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
                   <th className="py-2.5 px-3">Radiograph</th>
                   <th className="py-2.5 px-3">Patient / National ID</th>
                   <th className="py-2.5 px-3">Modality</th>
@@ -201,7 +201,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                     return (
                       <tr key={scan.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
                         {/* Radiograph Thumbnail */}
-                        <td className="py-2 px-3">
+                        <td className="py-2.5 px-3">
                           <div 
                             onClick={() => setSelectedPreviewScan(scan)}
                             className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden relative cursor-pointer group flex items-center justify-center shadow-sm"
@@ -221,23 +221,23 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                           </div>
                         </td>
 
-                        <td className="py-2 px-3">
-                          <div className="font-semibold text-slate-900 text-xs">{scan.patient_name || 'Anonymous Patient'}</div>
-                          <div className="text-[10px] text-slate-500 font-mono">
+                        <td className="py-2.5 px-3">
+                          <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
+                          <div className="text-[10px] font-mono text-slate-500">
                             {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
                           </div>
                         </td>
 
-                        <td className="py-2 px-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        <td className="py-2.5 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
                             scan.scan_type === 'Chest' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'
                           }`}>
                             {scan.scan_type}
                           </span>
                         </td>
 
-                        <td className="py-2 px-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        <td className="py-2.5 px-3">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-semibold ${
                             isAbnormal ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           }`}>
                             {isAbnormal ? (
@@ -249,19 +249,19 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                           </span>
                         </td>
 
-                        <td className="py-2 px-3 font-mono font-semibold text-xs text-slate-700">
+                        <td className="py-2.5 px-3 font-mono font-semibold text-[13px] text-slate-700">
                           {conf}%
                         </td>
 
-                        <td className="py-2 px-3 text-slate-500 text-xs font-mono">
+                        <td className="py-2.5 px-3 text-slate-500 text-[12px] font-mono">
                           {scan.scan_date ? new Date(scan.scan_date).toLocaleDateString() : 'Recent'}
                         </td>
 
-                        <td className="py-2 px-3 text-right">
+                        <td className="py-2.5 px-3 text-right">
                           <button
                             onClick={() => handleDownloadPdf(scan)}
                             disabled={downloadingId === scan.scan_id}
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-[#1982bf] hover:bg-[#156ea3] text-white text-[11px] font-semibold shadow-sm transition-all cursor-pointer"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-[#1982bf] hover:bg-[#156ea3] text-white text-[13px] font-semibold shadow-sm transition-all cursor-pointer"
                           >
                             {downloadingId === scan.scan_id ? (
                               <RefreshCw className="w-3 h-3 animate-spin" />
