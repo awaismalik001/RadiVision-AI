@@ -32,7 +32,7 @@ const getMediaUrl = (url) => {
 export default function DiagnosticStudio({ currentUser }) {
   // Modality & Demographics State
   const [modality, setModality] = useState("Bone"); // 'Bone' or 'Chest'
-  const [patientName, setPatientName] = useState("Sarah Chen");
+  const activeUserName = currentUser?.full_name || currentUser?.username || "Active User";
   const [patientAge, setPatientAge] = useState(34);
   const [patientGender, setPatientGender] = useState("Female");
   const [patientId, setPatientId] = useState(`RV-${Math.floor(100000 + Math.random() * 900000)}`);
@@ -52,12 +52,10 @@ export default function DiagnosticStudio({ currentUser }) {
     setModality(sampleType);
     if (sampleType === "Bone") {
       setPreviewUrl("/sample_bone.png");
-      setPatientName("Sarah Chen");
       setPatientAge(34);
       setLocation("New York");
     } else {
       setPreviewUrl("/sample_chest.png");
-      setPatientName("Ahmad Khan");
       setPatientAge(47);
       setLocation("Islamabad");
     }
@@ -100,7 +98,7 @@ export default function DiagnosticStudio({ currentUser }) {
       }
 
       formData.append("modality", modality);
-      formData.append("patient_name", patientName);
+      formData.append("patient_name", activeUserName);
       formData.append("patient_age", patientAge);
       formData.append("patient_gender", patientGender);
       formData.append("patient_id", patientId);
@@ -129,7 +127,7 @@ export default function DiagnosticStudio({ currentUser }) {
     try {
       const payload = {
         patient_id: analysisResult.patient_id,
-        patient_name: analysisResult.patient_name,
+        patient_name: analysisResult.patient_name || activeUserName,
         patient_age: analysisResult.patient_age,
         patient_gender: analysisResult.patient_gender,
         scan_type: analysisResult.scan_type,
@@ -292,12 +290,12 @@ export default function DiagnosticStudio({ currentUser }) {
             </div>
           </div>
 
-          {/* Patient PACS Demographics Card */}
+          {/* Scan & Clinical Details Card */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
               <span className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-blue-600" />
-                <span>Patient Demographics</span>
+                <span>Scan & Clinical Details</span>
               </span>
               <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center space-x-1">
                 <Lock className="w-3 h-3 inline" />
@@ -307,16 +305,6 @@ export default function DiagnosticStudio({ currentUser }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Patient Name</label>
-                <input
-                  type="text"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Medical Record # (MRN)</label>
                 <input
                   type="text"
@@ -324,27 +312,6 @@ export default function DiagnosticStudio({ currentUser }) {
                   onChange={(e) => setPatientId(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Age & Gender</label>
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    value={patientAge}
-                    onChange={(e) => setPatientAge(Number(e.target.value))}
-                    className="w-16 px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <select
-                    value={patientGender}
-                    onChange={(e) => setPatientGender(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Female">Female</option>
-                    <option value="Male">Male</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
               </div>
 
               <div>
@@ -358,6 +325,28 @@ export default function DiagnosticStudio({ currentUser }) {
                     placeholder="e.g. New York, Islamabad"
                     className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Age & Gender</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    value={patientAge}
+                    onChange={(e) => setPatientAge(Number(e.target.value))}
+                    placeholder="Age"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <select
+                    value={patientGender}
+                    onChange={(e) => setPatientGender(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
               </div>
             </div>
