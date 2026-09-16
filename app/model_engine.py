@@ -18,6 +18,9 @@ from typing import Dict, Any, Tuple, List
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+from app.vit_model import vit_engine
+from app.gemini_service import gemini_service
+
 # Deep Learning Framework imports with graceful fallbacks
 try:
     import numpy as np
@@ -230,12 +233,25 @@ class ModelEngine:
                     }]
                     body_region = "Thoracic (Normal Lung Fields)"
 
+                # Vision Transformer & Gemini Multi-Modal Verification
+                vit_res = vit_engine.predict(image_path, modality="Chest")
+                gemini_ref = gemini_service.refine_and_cross_verify(
+                    image_path=image_path,
+                    modality="Chest",
+                    initial_prediction=vit_res.get("prediction", summary),
+                    initial_confidence=vit_res.get("confidence", confidence),
+                    body_region=body_region
+                )
+
                 return {
                     "scan_type": "Chest",
                     "prediction": summary,
                     "confidence": confidence,
                     "body_region": body_region,
                     "findings": findings,
+                    "vit_details": vit_res,
+                    "gemini_refinement": gemini_ref,
+                    "architecture": "Vision Transformer (ViT-B/16) + Gemini AI Cross-Verification",
                     "is_simulated": False
                 }
             except Exception as e:
@@ -294,12 +310,25 @@ class ModelEngine:
             "bbox_h": 0.45 if is_pneumonia else None
         }]
 
+        # Vision Transformer & Gemini Multi-Modal Verification
+        vit_res = vit_engine.predict(image_path, modality="Chest")
+        gemini_ref = gemini_service.refine_and_cross_verify(
+            image_path=image_path,
+            modality="Chest",
+            initial_prediction=vit_res.get("prediction", summary),
+            initial_confidence=vit_res.get("confidence", confidence),
+            body_region="Thoracic"
+        )
+
         return {
             "scan_type": "Chest",
             "prediction": summary,
             "confidence": confidence,
             "body_region": "Thoracic",
             "findings": findings,
+            "vit_details": vit_res,
+            "gemini_refinement": gemini_ref,
+            "architecture": "Vision Transformer (ViT-B/16) + Gemini AI Cross-Verification",
             "is_simulated": True
         }
 
@@ -363,12 +392,25 @@ class ModelEngine:
                     }]
                     body_region = "Skeletal / Intact Cortices"
 
+                # Vision Transformer & Gemini Multi-Modal Verification
+                vit_res = vit_engine.predict(image_path, modality="Bone")
+                gemini_ref = gemini_service.refine_and_cross_verify(
+                    image_path=image_path,
+                    modality="Bone",
+                    initial_prediction=vit_res.get("prediction", summary),
+                    initial_confidence=vit_res.get("confidence", confidence),
+                    body_region=body_region
+                )
+
                 return {
                     "scan_type": "Bone",
                     "prediction": summary,
                     "confidence": confidence,
                     "body_region": body_region,
                     "findings": findings,
+                    "vit_details": vit_res,
+                    "gemini_refinement": gemini_ref,
+                    "architecture": "Vision Transformer (ViT-B/16) + Gemini AI Cross-Verification",
                     "is_simulated": False
                 }
             except Exception as e:

@@ -74,13 +74,20 @@ class GeminiDiagnosticService:
                 "Reply in brief bullet points on: Contrast Status, Recommended Gamma, and Quality Score (1-100)."
             )
 
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[
-                    types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
-                    prompt
-                ]
-            )
+            response = None
+            for model_name in ["gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"]:
+                try:
+                    response = self.client.models.generate_content(
+                        model=model_name,
+                        contents=[
+                            types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
+                            prompt
+                        ]
+                    )
+                    if response and response.text:
+                        break
+                except Exception:
+                    continue
 
             text = response.text or ""
             return {
@@ -143,15 +150,22 @@ class GeminiDiagnosticService:
                 f"3. Clinical recommendation for the managing physician."
             )
 
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[
-                    types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
-                    prompt
-                ]
-            )
+            response = None
+            for model_name in ["gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-2.5-flash"]:
+                try:
+                    response = self.client.models.generate_content(
+                        model=model_name,
+                        contents=[
+                            types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
+                            prompt
+                        ]
+                    )
+                    if response and response.text:
+                        break
+                except Exception:
+                    continue
 
-            refinement_text = response.text.strip() if response.text else ""
+            refinement_text = response.text.strip() if (response and response.text) else ""
             if refinement_text:
                 return {
                     "verified": True,

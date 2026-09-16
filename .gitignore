@@ -29,6 +29,7 @@ runs/
 uploads/*
 !uploads/.gitkeep
 reports/*.pdf
+reports/*.xlsx
 reports/annotated_*
 
 # Databases

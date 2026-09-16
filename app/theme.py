@@ -14,9 +14,9 @@ Transforms the desktop application into the modern cyber-clinical theme:
 """
 
 # ----------------- Color Palette Constants -----------------
-PRIMARY_NAVY    = "#06B6D4"   # Primary Brand Cyan (accent in cyber theme)
-SECONDARY_BLUE  = "#0284C7"   # Sky/Blue
-ACCENT_BLUE     = "#22D3EE"   # Neon Cyan Glow
+PRIMARY_NAVY    = "#1982BF"   # Primary Brand Clinical Blue (#1982BF)
+SECONDARY_BLUE  = "#156EA3"   # Darker Accent Blue
+ACCENT_BLUE     = "#38BDF8"   # Sky Accent Glow
 SURFACE_1       = "#0E1626"   # Dark card containers, sidebar, tables, forms
 SURFACE_2       = "#070B14"   # Global main cyber canvas background
 BG_LIGHT        = "#070B14"   # Alias for surface-2

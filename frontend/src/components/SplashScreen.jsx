@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, ShieldCheck, Cpu, ArrowRight, Sparkles, Stethoscope } from 'lucide-react';
+import splashImg from '../assets/splash_workstation.jpg';
 
 export default function SplashScreen({ onComplete }) {
   const [progress, setProgress] = useState(12);
@@ -42,7 +43,7 @@ export default function SplashScreen({ onComplete }) {
       {/* Background Graphic with Vignette & Cyber Grid */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/splash_workstation.jpg"
+          src={splashImg}
           alt="RadiVision AI Workstation"
           className="w-full h-full object-cover object-center filter brightness-50 contrast-125 scale-105 transform animate-pulse-slow"
         />

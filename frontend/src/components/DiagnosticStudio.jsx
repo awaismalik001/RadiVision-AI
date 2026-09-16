@@ -17,13 +17,19 @@ import {
   Stethoscope, 
   Activity,
   Crosshair,
-  Building2,
-  UserCheck
+  Lock,
+  Cpu,
+  ShieldCheck,
+  Bot
 } from 'lucide-react';
 
-const API_BASE = "http://127.0.0.1:8000";
+const getMediaUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) return url;
+  return `http://127.0.0.1:8000${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
-export default function DiagnosticStudio() {
+export default function DiagnosticStudio({ currentUser }) {
   // Modality & Demographics State
   const [modality, setModality] = useState("Bone"); // 'Bone' or 'Chest'
   const [patientName, setPatientName] = useState("Sarah Chen");
@@ -37,7 +43,7 @@ export default function DiagnosticStudio() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [viewMode, setViewMode] = useState("annotated"); // 'original' | 'annotated' | 'split'
+  const [viewMode, setViewMode] = useState("annotated"); // 'original' | 'annotated'
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -78,7 +84,7 @@ export default function DiagnosticStudio() {
     }
   };
 
-  // Run AI Diagnostics
+  // Run AI Diagnostics (ViT + Gemini Pipeline)
   const handleAnalyze = async () => {
     if (!selectedFile && !previewUrl) return;
 
@@ -88,7 +94,6 @@ export default function DiagnosticStudio() {
       if (selectedFile instanceof File) {
         formData.append("file", selectedFile);
       } else {
-        // If using sample preset, fetch blob first
         const sampleResp = await fetch(previewUrl);
         const blob = await sampleResp.blob();
         formData.append("file", blob, `${modality.toLowerCase()}_sample.png`);
@@ -101,7 +106,7 @@ export default function DiagnosticStudio() {
       formData.append("patient_id", patientId);
       formData.append("location", location);
 
-      const resp = await axios.post(`${API_BASE}/api/predict`, formData, {
+      const resp = await axios.post('/api/predict', formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
@@ -109,7 +114,7 @@ export default function DiagnosticStudio() {
       setViewMode("annotated");
     } catch (err) {
       console.error("Analysis failed:", err);
-      alert("Analysis error: Unable to connect to RadiVision AI backend at " + API_BASE);
+      alert("Analysis error: Unable to connect to RadiVision AI backend.");
     } finally {
       setAnalyzing(false);
     }
@@ -135,19 +140,18 @@ export default function DiagnosticStudio() {
         location: analysisResult.location
       };
 
-      const resp = await axios.post(`${API_BASE}/api/export-pdf`, payload, {
+      const resp = await axios.post('/api/export-pdf', payload, {
         responseType: 'blob'
       });
 
-      // Trigger download
       const blob = new Blob([resp.data], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
-      link.download = `RSNA_Report_${analysisResult.patient_id}.pdf`;
+      link.download = `RadiVision_Report_${analysisResult.patient_id}.pdf`;
       link.click();
     } catch (err) {
       console.error("PDF Export error:", err);
-      alert("Failed to export PDF report. Please verify backend server is active.");
+      alert("Failed to export PDF report. Please verify server connectivity.");
     } finally {
       setDownloadingPdf(false);
     }
@@ -160,30 +164,30 @@ export default function DiagnosticStudio() {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#070b14] text-slate-100 p-6 md:p-8 space-y-6">
-      {/* Top Banner / Studio Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+    <div className="flex-1 overflow-y-auto bg-slate-50 text-slate-900 font-sans p-6 md:p-8 space-y-6">
+      {/* Top Banner & Modality Toggles */}
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 text-xs font-mono mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>AI Radiographic Diagnostic Workstation</span>
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span>Vision Transformer (ViT-B/16) • Gemini 2.5 Multi-Modal Cross-Verification</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-            Diagnostic Inference Studio
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+            AI Diagnostic Studio
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Deep learning multi-modal screening for Chest (Pneumonia) & Bone (Fractures) with GPS referrals.
+          <p className="text-sm text-slate-500 mt-0.5">
+            Deep learning plain radiograph screening with instant Grad-CAM localization & ViT triage.
           </p>
         </div>
 
         {/* Modality Selector Tabs */}
-        <div className="flex items-center bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 self-start md:self-auto">
+        <div className="flex items-center bg-white p-1 rounded-xl border border-slate-300 shadow-sm self-start md:self-auto">
           <button
             onClick={() => { setModality("Chest"); setAnalysisResult(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center space-x-2 ${
               modality === "Chest"
-                ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/20"
-                : "text-slate-400 hover:text-white"
+                ? "bg-[#1982bf] text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <Activity className="w-4 h-4" />
@@ -193,107 +197,54 @@ export default function DiagnosticStudio() {
             onClick={() => { setModality("Bone"); setAnalysisResult(null); }}
             className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center space-x-2 ${
               modality === "Bone"
-                ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-600/20"
-                : "text-slate-400 hover:text-white"
+                ? "bg-[#1982bf] text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <Crosshair className="w-4 h-4" />
-            <span>BONE (Fracture)</span>
+            <span>BONE (Fractures)</span>
           </button>
         </div>
       </div>
 
-      {/* Main Grid: Left Controls & Demographics, Right Radiograph & Results */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Demographics & Ingestion Controls (5 Cols) */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Upload & Demographics (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Patient Demographics Card */}
-          <div className="p-5 rounded-2xl bg-[#0e1626]/80 border border-slate-800/80 backdrop-blur-md shadow-xl">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-300 mb-4 flex items-center space-x-2 font-mono">
-              <span className="w-2 h-2 rounded-full bg-cyan-400" />
-              <span>1. Patient Demographics & GPS Location</span>
-            </h3>
-
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="col-span-2">
-                <label className="text-slate-400 font-medium block mb-1">Patient Full Name</label>
-                <input
-                  type="text"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-400 font-medium block mb-1">Age</label>
-                <input
-                  type="number"
-                  value={patientAge}
-                  onChange={(e) => setPatientAge(parseInt(e.target.value) || 0)}
-                  className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-400 font-medium block mb-1">Gender</label>
-                <select
-                  value={patientGender}
-                  onChange={(e) => setPatientGender(e.target.value)}
-                  className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                >
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div className="col-span-2">
-                <label className="text-slate-400 font-medium block mb-1 flex items-center justify-between">
-                  <span>Current Patient Location (for Referrals)</span>
-                  <span className="text-[10px] text-cyan-400 font-mono">GPS Anchored</span>
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-cyan-400 absolute left-3 top-2.5" />
-                  <select
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                  >
-                    <option value="New York">New York, USA (Lenox Hill / NYU Langone)</option>
-                    <option value="Islamabad">Islamabad, Pakistan (Shifa / Maroof Int)</option>
-                    <option value="Karachi">Karachi, Pakistan (Aga Khan University)</option>
-                    <option value="Lahore">Lahore, Pakistan (Shaukat Khanum)</option>
-                    <option value="London">London, UK (St Thomas' Hospital)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="col-span-2 pt-1 flex justify-between items-center text-[11px] text-slate-400 font-mono">
-                <span>Assigned PACS ID: <strong className="text-cyan-300">{patientId}</strong></span>
+          {/* Drag & Drop File Upload Area */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+                <UploadCloud className="w-4 h-4 text-blue-600" />
+                <span>Radiographic Ingestion</span>
+              </h2>
+              <div className="flex items-center space-x-2">
                 <button
                   type="button"
-                  onClick={() => setPatientId(`RV-${Math.floor(100000 + Math.random() * 900000)}`)}
-                  className="text-cyan-400 hover:underline cursor-pointer"
+                  onClick={() => handleLoadSample("Bone")}
+                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
                 >
-                  Generate New
+                  Load Bone Sample
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLoadSample("Chest")}
+                  className="text-[11px] font-semibold text-teal-600 hover:text-teal-800 bg-teal-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                >
+                  Load Chest Sample
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Radiograph Ingestion Dropzone */}
-          <div className="p-5 rounded-2xl bg-[#0e1626]/80 border border-slate-800/80 backdrop-blur-md shadow-xl space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-300 flex items-center space-x-2 font-mono">
-              <span className="w-2 h-2 rounded-full bg-blue-400" />
-              <span>2. Radiograph Ingestion</span>
-            </h3>
-
+            {/* Dropzone */}
             <div
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-700/80 hover:border-cyan-500/70 bg-slate-900/40 rounded-xl p-6 text-center cursor-pointer transition-all hover:bg-slate-900/70 group"
+              className={`relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
+                previewUrl 
+                  ? "border-blue-400 bg-blue-50/20" 
+                  : "border-slate-300 hover:border-blue-500 hover:bg-slate-50"
+              }`}
             >
               <input
                 ref={fileInputRef}
@@ -302,231 +253,298 @@ export default function DiagnosticStudio() {
                 onChange={handleFileChange}
                 className="hidden"
               />
-              <UploadCloud className="w-10 h-10 text-slate-400 group-hover:text-cyan-400 mx-auto mb-3 transition-colors" />
-              <div className="text-sm font-medium text-slate-200">
-                Drop DICOM or Radiograph Image Here
+
+              {previewUrl ? (
+                <div className="space-y-3">
+                  <div className="relative mx-auto max-h-56 max-w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-950 inline-block">
+                    <img
+                      src={previewUrl}
+                      alt="Uploaded Radiograph"
+                      className="max-h-56 object-contain"
+                    />
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#0B1727]/80 text-white text-[10px] font-mono">
+                      {modality} Modality
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Click or drop another image to replace.
+                  </p>
+                </div>
+              ) : (
+                <div className="py-8 space-y-3">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
+                    <UploadCloud className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">
+                      Drag & drop medical X-ray scan here
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Supports DICOM exports, PNG, JPG, and WEBP formats
+                    </p>
+                  </div>
+                  <div className="inline-block px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
+                    Browse Local File
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Patient PACS Demographics Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center space-x-2">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Patient Demographics</span>
+              </span>
+              <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center space-x-1">
+                <Lock className="w-3 h-3 inline" />
+                <span>AES-256 Encrypted</span>
+              </span>
+            </h2>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Patient Name</label>
+                <input
+                  type="text"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-              <div className="text-xs text-slate-400 mt-1 font-mono">
-                Supports High-Res PNG, JPG, JPEG (Grayscale/RGB)
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Medical Record # (MRN)</label>
+                <input
+                  type="text"
+                  value={patientId}
+                  onChange={(e) => setPatientId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Age & Gender</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    value={patientAge}
+                    onChange={(e) => setPatientAge(Number(e.target.value))}
+                    className="w-16 px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <select
+                    value={patientGender}
+                    onChange={(e) => setPatientGender(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">GPS / City Location</label>
+                <div className="relative">
+                  <MapPin className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. New York, Islamabad"
+                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Instant Demo Presets */}
-            <div className="pt-2">
-              <div className="text-xs font-mono text-slate-400 mb-2">QUICK TEST PRESETS:</div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleLoadSample("Chest")}
-                  className="px-3 py-2 rounded-lg bg-slate-800/70 hover:bg-cyan-950/60 border border-slate-700 hover:border-cyan-500/50 text-xs font-medium text-slate-300 hover:text-cyan-300 transition-all text-left cursor-pointer"
-                >
-                  🫁 Load Sample Chest X-Ray
-                </button>
-                <button
-                  onClick={() => handleLoadSample("Bone")}
-                  className="px-3 py-2 rounded-lg bg-slate-800/70 hover:bg-cyan-950/60 border border-slate-700 hover:border-cyan-500/50 text-xs font-medium text-slate-300 hover:text-cyan-300 transition-all text-left cursor-pointer"
-                >
-                  🦴 Load Sample Bone X-Ray
-                </button>
-              </div>
-            </div>
-
-            {/* Analyze Action Button */}
-            <div className="pt-2">
-              <button
-                onClick={handleAnalyze}
-                disabled={(!selectedFile && !previewUrl) || analyzing}
-                className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide flex items-center justify-center space-x-2 transition-all cursor-pointer ${
-                  (!selectedFile && !previewUrl) || analyzing
-                    ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
-                    : "bg-gradient-to-r from-cyan-600 via-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 border border-cyan-400/40"
-                }`}
-              >
-                {analyzing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>RUNNING PYTORCH INFERENCE...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>ANALYZE RADIOGRAPH</span>
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Ingestion Trigger Button */}
+            <button
+              onClick={handleAnalyze}
+              disabled={analyzing || (!selectedFile && !previewUrl)}
+              className={`w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all cursor-pointer ${
+                analyzing || (!selectedFile && !previewUrl)
+                  ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  : "bg-[#0B1727] hover:bg-slate-800 text-white shadow-blue-900/10"
+              }`}
+            >
+              {analyzing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                  <span>Executing Vision Transformer & Gemini Verification...</span>
+                </>
+              ) : (
+                <>
+                  <Stethoscope className="w-4 h-4 text-cyan-400" />
+                  <span>Execute Diagnostic Analysis</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Right Column: Radiograph Inspection & Clinical Results (7 Cols) */}
+        {/* Right Column: Diagnostic Output & Viewport (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Radiograph Canvas Viewer */}
-          <div className="p-5 rounded-2xl bg-[#0e1626]/80 border border-slate-800/80 backdrop-blur-md shadow-xl flex flex-col justify-between min-h-[460px]">
-            <div className="flex items-center justify-between mb-4 border-b border-slate-800/70 pb-3">
-              <div className="flex items-center space-x-2">
-                <Eye className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs font-mono font-bold tracking-wider text-slate-200 uppercase">
-                  RADIOGRAPH INSPECTION CANVAS
-                </span>
+          {/* Diagnostic Viewport Card */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between min-h-[420px]">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div>
+                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+                  <Eye className="w-4 h-4 text-blue-600" />
+                  <span>Radiological Viewport</span>
+                </h2>
+                <div className="text-xs text-slate-500">
+                  {analysisResult ? "Grad-CAM lesion highlight & bounding boxes active" : "Awaiting scan ingestion"}
+                </div>
               </div>
 
-              {/* View Switcher if analyzed */}
+              {/* View Toggle */}
               {analysisResult && (
-                <div className="flex items-center bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs">
+                <div className="flex items-center bg-slate-100 p-1 rounded-xl">
                   <button
                     onClick={() => setViewMode("annotated")}
-                    className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
-                      viewMode === "annotated" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      viewMode === "annotated"
+                        ? "bg-white text-slate-900 shadow-sm font-semibold"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    Grad-CAM Overlay
+                    Annotated
                   </button>
                   <button
                     onClick={() => setViewMode("original")}
-                    className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
-                      viewMode === "original" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      viewMode === "original"
+                        ? "bg-white text-slate-900 shadow-sm font-semibold"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    Raw Radiograph
+                    Raw Scan
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Canvas Body */}
-            <div className="relative flex-1 flex items-center justify-center bg-[#070b14] rounded-xl overflow-hidden border border-slate-800/80 min-h-[360px]">
-              {previewUrl ? (
-                <div className="relative max-h-[420px] w-full flex items-center justify-center p-2">
+            {/* Viewport Center */}
+            <div className="my-auto py-4 flex items-center justify-center">
+              {analysisResult ? (
+                <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-950 max-h-[380px]">
                   <img
-                    src={
-                      viewMode === "annotated" && analysisResult?.annotated_url
-                        ? `${API_BASE}${analysisResult.annotated_url}`
-                        : previewUrl
-                    }
-                    alt="Patient Radiograph"
-                    className="max-h-[380px] max-w-full object-contain rounded-lg shadow-2xl filter contrast-110"
+                    src={getMediaUrl(viewMode === "annotated" ? analysisResult.annotated_url : analysisResult.image_url)}
+                    alt="Scan Result"
+                    className="max-h-[380px] object-contain mx-auto"
                   />
-                  
-                  {/* Holographic Crosshair Overlay */}
-                  <div className="absolute inset-0 pointer-events-none border border-cyan-500/10" />
+                  <div className="absolute bottom-3 left-3 px-3 py-1 rounded-lg bg-[#0B1727]/85 text-white text-xs font-mono backdrop-blur-md">
+                    {analysisResult.scan_type} • {analysisResult.body_region || "Skeletal"}
+                  </div>
+                </div>
+              ) : previewUrl ? (
+                <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-950 max-h-[340px]">
+                  <img
+                    src={previewUrl}
+                    alt="Pending Analysis"
+                    className="max-h-[340px] object-contain opacity-85"
+                  />
                 </div>
               ) : (
-                <div className="text-center p-8 text-slate-500">
-                  <Layers className="w-12 h-12 mx-auto mb-3 opacity-30 text-cyan-400" />
-                  <p className="text-sm font-medium">No Radiograph Loaded</p>
-                  <p className="text-xs text-slate-600 mt-1 font-mono">Upload an X-ray or click a preset to initiate screening</p>
+                <div className="text-center py-16 text-slate-400">
+                  <Layers className="w-12 h-12 mx-auto mb-2 text-slate-300 stroke-1" />
+                  <p className="text-sm font-medium text-slate-500">No radiograph loaded in viewport</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Ingest a scan or load a preset sample to view results</p>
                 </div>
               )}
             </div>
+
+            {/* Viewport Footer with Export PDF */}
+            {analysisResult && (
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div className="text-xs text-slate-500 font-mono">
+                  Scan ID: #{analysisResult.scan_id} • Analyzed: {analysisResult.timestamp}
+                </div>
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={downloadingPdf}
+                  className="px-4 py-2 rounded-xl bg-[#1982bf] hover:bg-[#156ea3] text-white font-semibold text-xs flex items-center space-x-2 shadow-sm transition-all cursor-pointer"
+                >
+                  {downloadingPdf ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>{downloadingPdf ? "Compiling PDF..." : "Export Clinical PDF Report"}</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Diagnostic Results Card (Displays when inference finishes) */}
+          {/* AI Clinical Diagnosis & Gemini Refinement Card */}
           {analysisResult && (
             <motion.div
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-5 rounded-2xl bg-[#0e1626]/80 border border-slate-800/80 backdrop-blur-md shadow-xl space-y-4"
+              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4"
             >
-              {/* Abnormality Header Pill */}
-              <div className={`p-4 rounded-xl border flex items-center justify-between ${
-                isAbnormal
-                  ? "bg-rose-950/40 border-rose-600/40 text-rose-200"
-                  : "bg-emerald-950/40 border-emerald-600/40 text-emerald-200"
-              }`}>
+              {/* Primary ViT Result Banner */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center space-x-3">
-                  {isAbnormal ? (
-                    <AlertTriangle className="w-6 h-6 text-rose-400 shrink-0" />
-                  ) : (
-                    <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
-                  )}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isAbnormal ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-600"
+                  }`}>
+                    {isAbnormal ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                  </div>
                   <div>
-                    <div className="text-xs font-mono tracking-widest uppercase opacity-80">
-                      DIAGNOSTIC IMPRESSION
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Primary ViT Diagnosis
                     </div>
-                    <div className="text-lg font-extrabold tracking-wide">
-                      {analysisResult.prediction.toUpperCase()}
+                    <div className={`text-lg font-bold ${
+                      isAbnormal ? "text-rose-700" : "text-emerald-700"
+                    }`}>
+                      {analysisResult.prediction}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-right font-mono">
-                  <div className="text-[10px] uppercase opacity-75">CALIBRATED CONFIDENCE</div>
-                  <div className="text-xl font-bold">
+                <div className="text-right">
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Confidence</div>
+                  <div className="text-xl font-extrabold text-slate-900 font-mono">
                     {(analysisResult.confidence * 100).toFixed(1)}%
                   </div>
                 </div>
               </div>
 
-              {/* Local Healthcare & Specialist Referrals Box */}
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/20 text-xs space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <div className="flex items-center space-x-2 text-cyan-300 font-semibold font-mono">
-                    <Building2 className="w-4 h-4 text-cyan-400" />
-                    <span>LOCAL HEALTHCARE & SPECIALIST REFERRALS ({location.toUpperCase()})</span>
+              {/* Gemini Multi-Modal Cross-Verification Box */}
+              {analysisResult.gemini_refinement && (
+                <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-blue-900 font-semibold text-xs uppercase tracking-wider">
+                      <Bot className="w-4 h-4 text-blue-700" />
+                      <span>Gemini AI Multimodal Cross-Verification</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-200 text-blue-900 font-bold">
+                      {analysisResult.gemini_refinement.status || "Verified"}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono">GPS Verified</span>
+
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    "{analysisResult.gemini_refinement.clinical_impression}"
+                  </p>
+
+                  <div className="pt-2 border-t border-blue-200/60 flex items-center justify-between text-[11px] text-blue-900">
+                    <div>
+                      <span className="font-semibold">Agreement:</span> {analysisResult.gemini_refinement.model_agreement}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Triage Urgency:</span>{' '}
+                      <span className={`font-bold ${isAbnormal ? "text-rose-600" : "text-emerald-700"}`}>
+                        {analysisResult.gemini_refinement.urgency}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-
-                {analysisResult.facilities && analysisResult.facilities.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {analysisResult.facilities.slice(0, 2).map((fac, idx) => (
-                      <div key={idx} className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60 space-y-1.5">
-                        <div className="font-bold text-slate-100 flex items-center space-x-1.5">
-                          <Building2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                          <span className="truncate">{fac.hospital_name || fac.name}</span>
-                        </div>
-                        <div className="text-slate-300 flex items-center space-x-1.5">
-                          <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                          <span className="font-medium text-emerald-300">{fac.doctor_name || fac.specialist}</span>
-                        </div>
-                        <div className="text-slate-400 flex items-center space-x-1.5 font-mono text-[11px]">
-                          <Phone className="w-3 h-3 text-cyan-400 shrink-0" />
-                          <span>{fac.phone || "+1 212-434-2000"}</span>
-                        </div>
-                        {fac.email && (
-                          <div className="text-slate-400 flex items-center space-x-1.5 font-mono text-[11px] truncate">
-                            <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate">{fac.email}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-slate-400 italic">No specialist referrals required for normal scan.</div>
-                )}
-              </div>
-
-              {/* Action Toolbar: Download RSNA PDF Report */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
-                <button
-                  onClick={handleDownloadPdf}
-                  disabled={downloadingPdf}
-                  className="w-full sm:w-auto flex-1 py-3 px-5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs tracking-wider flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/20 transition-all cursor-pointer border border-blue-400/30"
-                >
-                  {downloadingPdf ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>COMPILING RSNA REPORT...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      <span>DOWNLOAD RSNA CLINICAL PDF REPORT</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setAnalysisResult(null);
-                    setSelectedFile(null);
-                    setPreviewUrl(null);
-                  }}
-                  className="w-full sm:w-auto py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-xs tracking-wider border border-slate-700 transition-colors cursor-pointer"
-                >
-                  NEW SCAN
-                </button>
-              </div>
+              )}
             </motion.div>
           )}
         </div>

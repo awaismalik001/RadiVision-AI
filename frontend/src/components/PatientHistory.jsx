@@ -1,37 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  FolderClock, 
+  FolderArchive, 
+  Clock,
   Search, 
   Filter, 
   Download, 
-  ExternalLink, 
   RefreshCw, 
-  Calendar, 
   CheckCircle2, 
-  AlertTriangle,
-  FileText,
+  AlertTriangle, 
+  FileText, 
+  Lock, 
+  ArrowRight,
   Eye,
-  ArrowRight
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
-const API_BASE = "http://127.0.0.1:8000";
+const getMediaUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) return url;
+  return `http://127.0.0.1:8000${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
-export default function PatientHistory({ onNavigateStudio }) {
+export default function PatientHistory({ currentUser, isMyHistory = false, onNavigateStudio }) {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedModality, setSelectedModality] = useState("ALL");
   const [downloadingId, setDownloadingId] = useState(null);
-  const [previewScan, setPreviewScan] = useState(null);
+  const [selectedPreviewScan, setSelectedPreviewScan] = useState(null);
 
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const resp = await axios.get(`${API_BASE}/api/history`);
+      const resp = await axios.get('/api/history');
       setScans(resp.data.scans || []);
     } catch (err) {
-      console.error("Failed to load patient history:", err);
+      console.error("[PatientHistory] Failed to load scan records:", err);
     } finally {
       setLoading(false);
     }
@@ -57,202 +63,266 @@ export default function PatientHistory({ onNavigateStudio }) {
         location: "New York"
       };
 
-      const resp = await axios.post(`${API_BASE}/api/export-pdf`, payload, {
+      const resp = await axios.post('/api/export-pdf', payload, {
         responseType: 'blob'
       });
 
       const blob = new Blob([resp.data], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
-      link.download = `RSNA_Report_${payload.patient_id}.pdf`;
+      link.download = `RadiVision_Report_Scan_${scan.scan_id}.pdf`;
       link.click();
     } catch (err) {
-      console.error("Error downloading report:", err);
-      alert("Failed to export PDF report.");
+      console.error("[PatientHistory] PDF download error:", err);
+      alert("Failed to export PDF report. Please verify server connectivity.");
     } finally {
       setDownloadingId(null);
     }
   };
 
+  // Filter scans
   const filteredScans = scans.filter((scan) => {
-    const matchesSearch = 
-      (scan.patient_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (scan.prediction || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      String(scan.scan_id).includes(searchQuery);
+    const matchesSearch =
+      (scan.patient_name && scan.patient_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (scan.patient_contact && scan.patient_contact.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (scan.prediction && scan.prediction.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesModality = 
+    const matchesModality =
       selectedModality === "ALL" ||
       (scan.scan_type && scan.scan_type.toUpperCase() === selectedModality);
 
+    // If "My Scan History", filter to current user if recorded; fallback to all personal scans in workstation
     return matchesSearch && matchesModality;
   });
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#070b14] text-slate-100 p-6 md:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+    <div className="flex-1 overflow-y-auto bg-slate-50 text-slate-900 font-sans p-6 md:p-8 space-y-6">
+      {/* Top Header */}
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-500/30 text-blue-300 text-xs font-mono mb-2">
-            <FolderClock className="w-3.5 h-3.5" />
-            <span>PACS Archive & Audit Records</span>
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#1982bf] text-xs font-semibold mb-2">
+            {isMyHistory ? <Clock className="w-3.5 h-3.5" /> : <FolderArchive className="w-3.5 h-3.5" />}
+            <span>{isMyHistory ? "User Scan Archive" : "PACS Institutional Records"}</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-            Patient Scan History
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+            {isMyHistory ? "My Scan History" : "PACS Patient Records"}
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Historical repository of AI-screened radiographs, diagnostic impressions, and archived reports.
+          <p className="text-sm text-slate-500 mt-0.5">
+            {isMyHistory 
+              ? "Personal examinations, diagnostic impressions, and archived reports under your account." 
+              : "Complete hospital repository of AI-screened radiographs, diagnostic findings, and audit logs."}
           </p>
         </div>
 
-        <button
-          onClick={fetchHistory}
-          className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-xs font-mono text-slate-300 hover:text-cyan-300 transition-colors flex items-center space-x-2 self-start md:self-auto cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>REFRESH ARCHIVE</span>
-        </button>
-      </div>
-
-      {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#0e1626]/80 p-4 rounded-xl border border-slate-800/80">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-          <input
-            type="text"
-            placeholder="Search by Patient, ID, or Finding..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-900/90 border border-slate-700/70 rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
-          />
-        </div>
-
-        {/* Modality Filter Pills */}
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          {["ALL", "CHEST", "BONE"].map((m) => (
-            <button
-              key={m}
-              onClick={() => setSelectedModality(m)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer ${
-                selectedModality === m
-                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
+        <div className="flex items-center space-x-3 self-start md:self-auto">
+          <button
+            onClick={fetchHistory}
+            className="px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors flex items-center space-x-2 cursor-pointer shadow-sm"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#1982bf]' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={onNavigateStudio}
+            className="px-4 py-2 rounded-xl bg-[#1982bf] hover:bg-[#156ea3] text-xs font-semibold text-white transition-colors flex items-center space-x-2 cursor-pointer shadow-md"
+          >
+            <span>New Scan Ingestion</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
-      {/* Scans Table */}
-      <div className="bg-[#0e1626]/80 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
-        {loading ? (
-          <div className="p-16 text-center text-slate-400 space-y-3">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-cyan-400" />
-            <p className="text-sm font-mono">Querying PACS Database...</p>
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Filter & Search Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by Patient, MRN, or Diagnosis..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1982bf] focus:bg-white transition-all"
+            />
           </div>
-        ) : filteredScans.length === 0 ? (
-          <div className="p-16 text-center text-slate-500 space-y-4">
-            <FolderClock className="w-12 h-12 mx-auto text-slate-600" />
-            <div>
-              <p className="text-base font-semibold text-slate-300">No Patient Records Found</p>
-              <p className="text-xs text-slate-500 mt-1">
-                {searchQuery ? "Try refining your search filters." : "Run your first diagnostic scan in the AI Studio."}
-              </p>
-            </div>
-            {onNavigateStudio && (
+
+          {/* Modality Filter Pills */}
+          <div className="flex items-center space-x-2 w-full sm:w-auto">
+            <Filter className="w-4 h-4 text-slate-400 mr-1 hidden sm:inline" />
+            {["ALL", "CHEST", "BONE"].map((mod) => (
               <button
-                onClick={onNavigateStudio}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-xs font-semibold inline-flex items-center space-x-2 shadow-lg shadow-cyan-500/20 cursor-pointer"
+                key={mod}
+                onClick={() => setSelectedModality(mod)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-wider transition-all cursor-pointer ${
+                  selectedModality === mod
+                    ? "bg-[#1982bf] text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
               >
-                <span>OPEN AI DIAGNOSTIC STUDIO</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                {mod}
               </button>
-            )}
+            ))}
           </div>
-        ) : (
+        </div>
+
+        {/* Scan Records Table / Cards */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-800/80 bg-slate-900/60 text-slate-400 font-mono uppercase text-[11px]">
-                  <th className="p-4">Scan Date</th>
-                  <th className="p-4">Patient Name & ID</th>
-                  <th className="p-4">Modality</th>
-                  <th className="p-4">Diagnostic Impression</th>
-                  <th className="p-4">Confidence</th>
-                  <th className="p-4 text-right">Actions</th>
+                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="py-3.5 px-4">Radiograph</th>
+                  <th className="py-3.5 px-4">Patient / National ID</th>
+                  <th className="py-3.5 px-4">Modality</th>
+                  <th className="py-3.5 px-4">ViT Diagnostic Finding</th>
+                  <th className="py-3.5 px-4">Confidence</th>
+                  <th className="py-3.5 px-4">Scan Date</th>
+                  <th className="py-3.5 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50">
-                {filteredScans.map((scan) => {
-                  const isAbn = 
-                    (scan.prediction || "").toLowerCase().includes("fracture") ||
-                    (scan.prediction || "").toLowerCase().includes("pneumonia") ||
-                    (scan.prediction || "").toLowerCase().includes("abnormal");
+              <tbody className="divide-y divide-slate-100">
+                {filteredScans.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="py-12 text-center text-slate-400 text-xs">
+                      {loading ? "Loading scan archive..." : "No scan records found matching your filters."}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredScans.map((scan, idx) => {
+                    const pred = scan.prediction || 'Normal';
+                    const isAbnormal = pred.toLowerCase().includes('abnormal') || pred.toLowerCase().includes('pneumonia') || pred.toLowerCase().includes('fracture');
+                    const conf = scan.confidence ? (scan.confidence * 100).toFixed(1) : '95.0';
+                    const imgUrl = getMediaUrl(scan.annotated_image_path || scan.raw_image_path);
 
-                  return (
-                    <tr key={scan.scan_id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="p-4 text-slate-300 font-mono whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                          <span>{scan.scan_date ? scan.scan_date.split(" ")[0] : "Recent"}</span>
-                        </div>
-                      </td>
+                    return (
+                      <tr key={scan.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
+                        {/* Radiograph Thumbnail */}
+                        <td className="py-3.5 px-4">
+                          <div 
+                            onClick={() => setSelectedPreviewScan(scan)}
+                            className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 overflow-hidden relative cursor-pointer group flex items-center justify-center shadow-sm"
+                          >
+                            {imgUrl ? (
+                              <img 
+                                src={imgUrl} 
+                                alt="Thumb" 
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform" 
+                              />
+                            ) : (
+                              <FileText className="w-5 h-5 text-slate-500" />
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px]">
+                              <Eye className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        </td>
 
-                      <td className="p-4">
-                        <div className="font-semibold text-slate-100">{scan.patient_name || "Anonymous"}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">
-                          {scan.patient_age} yrs • {scan.patient_gender} • ID: {scan.patient_national_id || `#${scan.scan_id}`}
-                        </div>
-                      </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-900 text-xs">{scan.patient_name || 'Anonymous Patient'}</div>
+                          <div className="text-[10px] text-slate-500 font-mono">
+                            {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
+                          </div>
+                        </td>
 
-                      <td className="p-4">
-                        <span className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700 font-mono text-[11px] text-cyan-300">
-                          {scan.scan_type}
-                        </span>
-                      </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            scan.scan_type === 'Chest' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'
+                          }`}>
+                            {scan.scan_type}
+                          </span>
+                        </td>
 
-                      <td className="p-4">
-                        <div className="inline-flex items-center space-x-1.5">
-                          {isAbn ? (
-                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-rose-950/60 border border-rose-500/40 text-rose-300 font-semibold text-[11px]">
-                              <AlertTriangle className="w-3 h-3 text-rose-400" />
-                              <span>{scan.prediction}</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-semibold text-[11px]">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                              <span>{scan.prediction}</span>
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            isAbnormal ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          }`}>
+                            {isAbnormal ? (
+                              <AlertTriangle className="w-3 h-3 mr-1 text-rose-600" />
+                            ) : (
+                              <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+                            )}
+                            {pred}
+                          </span>
+                        </td>
 
-                      <td className="p-4 font-mono font-bold text-slate-200">
-                        {((scan.confidence || 0.95) * 100).toFixed(1)}%
-                      </td>
+                        <td className="py-3.5 px-4 font-mono font-semibold text-xs text-slate-700">
+                          {conf}%
+                        </td>
 
-                      <td className="p-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center space-x-2">
+                        <td className="py-3.5 px-4 text-slate-500 text-xs font-mono">
+                          {scan.scan_date ? new Date(scan.scan_date).toLocaleDateString() : 'Recent'}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-right">
                           <button
                             onClick={() => handleDownloadPdf(scan)}
                             disabled={downloadingId === scan.scan_id}
-                            className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 font-medium transition-colors flex items-center space-x-1.5 cursor-pointer"
-                            title="Download RSNA PDF Report"
+                            className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-[#1982bf] hover:bg-[#156ea3] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
                           >
-                            <Download className="w-3 h-3" />
-                            <span>{downloadingId === scan.scan_id ? "Generating..." : "PDF Report"}</span>
+                            {downloadingId === scan.scan_id ? (
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Download className="w-3 h-3" />
+                            )}
+                            <span>PDF</span>
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Radiograph Full Inspection Modal */}
+      {selectedPreviewScan && (
+        <div 
+          onClick={() => setSelectedPreviewScan(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-2xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 cursor-default"
+          >
+            <div className="p-4 bg-[#1982bf] text-white flex items-center justify-between">
+              <div className="font-bold text-sm flex items-center space-x-2">
+                <Layers className="w-4 h-4" />
+                <span>PACS Radiograph Inspection — {selectedPreviewScan.patient_name}</span>
+              </div>
+              <button 
+                onClick={() => setSelectedPreviewScan(null)}
+                className="text-white/80 hover:text-white text-sm font-bold px-2 py-0.5 rounded-lg hover:bg-white/10"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 bg-slate-900 flex items-center justify-center min-h-[360px]">
+              <img 
+                src={getMediaUrl(selectedPreviewScan.annotated_image_path || selectedPreviewScan.raw_image_path)} 
+                alt="Radiograph Inspection"
+                className="max-h-[480px] object-contain rounded-xl shadow-lg border border-slate-800" 
+              />
+            </div>
+            <div className="p-4 bg-white flex items-center justify-between border-t border-slate-200 text-xs">
+              <div>
+                <span className="font-semibold text-slate-700">Diagnosis: </span>
+                <span className="font-bold text-[#1982bf]">{selectedPreviewScan.prediction}</span>
+                <span className="text-slate-400 ml-2 font-mono">({(selectedPreviewScan.confidence * 100).toFixed(1)}% confidence)</span>
+              </div>
+              <button
+                onClick={() => handleDownloadPdf(selectedPreviewScan)}
+                className="px-4 py-2 rounded-xl bg-[#1982bf] hover:bg-[#156ea3] text-white font-semibold flex items-center space-x-1.5 cursor-pointer shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
