@@ -17,14 +17,28 @@
   --color-medical-warning: #d97706;
 }
 
+html {
+  font-size: 13px; /* Standard native desktop application base font scale (Windows/Electron/Workstations) */
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
 body {
+  font-size: 13px;
   background-color: #f8fafc;
   color: #0f172a;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  font-family: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  user-select: none;
+}
+
+/* Ensure desktop form controls inherit the crisp desktop font scale */
+input, select, textarea, button {
+  font-family: inherit;
 }
 
 /* Crisp Clean Medical Scrollbars */

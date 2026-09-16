@@ -169,18 +169,18 @@ export default function DiagnosticStudio({ currentUser }) {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 text-slate-900 font-sans p-6 md:p-8 space-y-6">
+    <div className="flex-1 overflow-y-auto bg-slate-50 text-slate-900 font-sans p-4 md:p-5 space-y-4">
       {/* Top Banner & Modality Toggles */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>Vision Transformer (ViT-B/16) • Gemini 2.5 Multi-Modal Cross-Verification</span>
+          <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-[11px] font-semibold mb-1">
+            <Sparkles className="w-3 h-3 text-blue-600" />
+            <span>Vision Transformer (ViT-B/16) • Gemini Multimodal Cross-Verification</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">
             AI Diagnostic Studio
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Deep learning plain radiograph screening with instant Grad-CAM localization & ViT triage.
           </p>
         </div>
@@ -189,44 +189,44 @@ export default function DiagnosticStudio({ currentUser }) {
         <div className="flex items-center bg-white p-1 rounded-xl border border-slate-300 shadow-sm self-start md:self-auto">
           <button
             onClick={() => { setModality("Chest"); setAnalysisResult(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center space-x-2 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center space-x-1.5 ${
               modality === "Chest"
-                ? "bg-[#1982bf] text-white shadow-md"
+                ? "bg-[#1982bf] text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <Activity className="w-4 h-4" />
+            <Activity className="w-3.5 h-3.5" />
             <span>CHEST (Pneumonia)</span>
           </button>
           <button
             onClick={() => { setModality("Bone"); setAnalysisResult(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center space-x-2 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center space-x-1.5 ${
               modality === "Bone"
-                ? "bg-[#1982bf] text-white shadow-md"
+                ? "bg-[#1982bf] text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <Crosshair className="w-4 h-4" />
+            <Crosshair className="w-3.5 h-3.5" />
             <span>BONE (Fractures)</span>
           </button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Column: Upload & Demographics (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-4">
           {/* Drag & Drop File Upload Area */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
-                <UploadCloud className="w-4 h-4 text-blue-600" />
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+                <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
                 <span>Radiographic Ingestion</span>
               </h2>
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
                   onClick={() => handleLoadSample("Bone")}
-                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                  className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded transition-colors cursor-pointer"
                 >
                   Load Bone Sample
                 </button>
@@ -297,57 +297,57 @@ export default function DiagnosticStudio({ currentUser }) {
           </div>
 
           {/* Scan & Clinical Details Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
-              <span className="flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-blue-600" />
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+            <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center space-x-1.5">
+                <FileText className="w-3.5 h-3.5 text-blue-600" />
                 <span>Scan & Clinical Details</span>
               </span>
-              <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center space-x-1">
-                <Lock className="w-3 h-3 inline" />
+              <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded flex items-center space-x-1">
+                <Lock className="w-2.5 h-2.5 inline" />
                 <span>AES-256 Encrypted</span>
               </span>
             </h2>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Medical Record # (MRN)</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Medical Record # (MRN)</label>
                 <input
                   type="text"
                   value={patientId}
                   onChange={(e) => setPatientId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">GPS / City Location</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">GPS / City Location</label>
                 <div className="relative">
-                  <MapPin className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <MapPin className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="e.g. New York, Islamabad"
-                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-7 pr-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Age & Gender</label>
-                <div className="grid grid-cols-2 gap-3">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Age & Gender</label>
+                <div className="grid grid-cols-2 gap-2.5">
                   <input
                     type="number"
                     value={patientAge}
                     onChange={(e) => setPatientAge(Number(e.target.value))}
                     placeholder="Age"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <select
                     value={patientGender}
                     onChange={(e) => setPatientGender(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Female">Female</option>
                     <option value="Male">Male</option>
@@ -361,7 +361,7 @@ export default function DiagnosticStudio({ currentUser }) {
             <button
               onClick={handleAnalyze}
               disabled={analyzing || (!selectedFile && !previewUrl)}
-              className={`w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all cursor-pointer ${
+              className={`w-full py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center space-x-2 shadow-sm transition-all cursor-pointer ${
                 analyzing || (!selectedFile && !previewUrl)
                   ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                   : "bg-[#0B1727] hover:bg-slate-800 text-white shadow-blue-900/10"
@@ -369,7 +369,7 @@ export default function DiagnosticStudio({ currentUser }) {
             >
               {analyzing ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
                   <span>Executing Vision Transformer & Gemini Verification...</span>
                 </>
               ) : (
