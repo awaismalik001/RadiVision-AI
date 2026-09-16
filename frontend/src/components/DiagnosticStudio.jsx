@@ -157,9 +157,15 @@ export default function DiagnosticStudio({ currentUser }) {
   };
 
   const isAbnormal = analysisResult && (
-    analysisResult.prediction.toLowerCase().includes("fracture") ||
-    analysisResult.prediction.toLowerCase().includes("pneumonia") ||
-    analysisResult.prediction.toLowerCase().includes("abnormal")
+    !analysisResult.prediction.toLowerCase().includes("normal") &&
+    !analysisResult.prediction.toLowerCase().includes("no fracture") &&
+    !analysisResult.prediction.toLowerCase().includes("healthy") &&
+    !analysisResult.prediction.toLowerCase().includes("clear") &&
+    (
+      analysisResult.prediction.toLowerCase().includes("fracture") ||
+      analysisResult.prediction.toLowerCase().includes("pneumonia") ||
+      analysisResult.prediction.toLowerCase().includes("abnormal")
+    )
   );
 
   return (
@@ -477,6 +483,24 @@ export default function DiagnosticStudio({ currentUser }) {
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4"
             >
+              {/* Clinical Discrepancy & Escalation Alert Banner */}
+              {analysisResult.gemini_refinement?.escalated && (
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex items-start space-x-3 text-xs">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-bold uppercase tracking-wide flex items-center space-x-2 text-amber-900">
+                      <span>Clinical Safety Escalation Active</span>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-mono">
+                        Discordance Reconciled
+                      </span>
+                    </div>
+                    <div className="text-amber-900/90 mt-1 leading-relaxed font-medium">
+                      Primary screening model suggested normal, but Gemini Multimodal Clinical AI detected an acute fracture/pathology. Triage has been automatically escalated to High Priority for patient safety.
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Primary ViT Result Banner */}
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center space-x-3">
@@ -487,7 +511,7 @@ export default function DiagnosticStudio({ currentUser }) {
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Primary ViT Diagnosis
+                      {analysisResult.gemini_refinement?.escalated ? "Clinical Consensus Diagnosis (Escalated)" : "Primary ViT Diagnosis"}
                     </div>
                     <div className={`text-lg font-bold ${
                       isAbnormal ? "text-rose-700" : "text-emerald-700"
@@ -523,8 +547,15 @@ export default function DiagnosticStudio({ currentUser }) {
                   </p>
 
                   <div className="pt-2 border-t border-blue-200/60 flex items-center justify-between text-[11px] text-blue-900">
-                    <div>
-                      <span className="font-semibold">Agreement:</span> {analysisResult.gemini_refinement.model_agreement}
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-semibold">Consensus:</span>
+                      <span className={`font-bold px-2 py-0.5 rounded-md text-[10px] ${
+                        analysisResult.gemini_refinement.model_agreement?.includes("Discordance")
+                          ? "bg-amber-100 text-amber-900 border border-amber-300"
+                          : "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                      }`}>
+                        {analysisResult.gemini_refinement.model_agreement}
+                      </span>
                     </div>
                     <div>
                       <span className="font-semibold">Triage Urgency:</span>{' '}

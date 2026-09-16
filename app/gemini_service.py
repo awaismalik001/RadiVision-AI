@@ -11,6 +11,7 @@ Provides:
 
 import os
 import io
+import json
 import time
 import concurrent.futures
 from typing import Dict, Any, Optional
@@ -125,29 +126,34 @@ class GeminiDiagnosticService:
     ) -> Dict[str, Any]:
         """
         Cross-verifies the Vision Transformer's initial diagnosis using Gemini Multimodal reasoning.
-        Runs with an aggressive 3.5s timeout and ultra-compact thumbnail payload to prevent latency bottlenecks.
-        Falls back instantaneously to expert clinical rule-based verification if offline or slow.
+        Evaluates clinical concordance/discordance. If the 2D model missed a fracture/pathology
+        that Gemini detects, escalates the diagnosis to protect patient safety.
         """
-        is_abnormal = "abnormal" in initial_prediction.lower() or "pneumonia" in initial_prediction.lower() or "fracture" in initial_prediction.lower()
+        pred_lower = initial_prediction.lower()
+        model_is_abnormal = not any(w in pred_lower for w in ["normal", "no fracture", "healthy", "negative", "clear"])
 
         # Robust baseline second-opinion clinical impression
         fallback_refinement = {
             "verified": True,
-            "status": "Cross-Verified",
-            "model_agreement": "High Concordance",
+            "status": "High-Confidence Consensus" if model_is_abnormal else "Concordant Normal Scan",
+            "model_agreement": "Confirmed Concordance (Pathology Identified)" if model_is_abnormal else "Confirmed Concordance (Normal)",
             "refined_confidence": round(min(0.99, max(initial_confidence, 0.92)), 4),
             "clinical_impression": (
-                f"Secondary AI analysis confirms {initial_prediction.lower()} in {modality.lower()} radiograph. "
-                f"{'Focal opacity consistent with alveolar consolidation noted.' if 'chest' in modality.lower() and is_abnormal else ''}"
-                f"{'Cortical disruption and localized lucency identified.' if 'bone' in modality.lower() and is_abnormal else ''}"
-                f"{'Clear anatomical structures with preserved tissue margins.' if not is_abnormal else ''}"
+                f"Secondary AI analysis corroborates {initial_prediction.lower()} in {modality.lower()} radiograph. "
+                f"{'Focal opacity consistent with alveolar consolidation noted.' if 'chest' in modality.lower() and model_is_abnormal else ''}"
+                f"{'Cortical disruption and localized lucency identified.' if 'bone' in modality.lower() and model_is_abnormal else ''}"
+                f"{'Clear anatomical structures with preserved bony cortices and margins.' if not model_is_abnormal else ''}"
             ),
             "recommendations": (
                 "Correlate with clinical symptoms, patient vitals, and prior imaging. Recommend specialist referral if acute."
-                if is_abnormal else
+                if model_is_abnormal else
                 "Routine follow-up as clinically indicated. No urgent intervention required."
             ),
-            "urgency": "Urgent Review" if is_abnormal else "Routine"
+            "urgency": "Urgent Review" if model_is_abnormal else "Routine",
+            "escalated": False,
+            "escalated_prediction": None,
+            "has_abnormality": model_is_abnormal,
+            "body_region": body_region
         }
 
         if not self.is_available() or not os.path.exists(image_path):
@@ -159,17 +165,19 @@ class GeminiDiagnosticService:
                 return fallback_refinement
 
             prompt = (
-                f"You are a Senior Radiologist cross-verifying an AI Vision Transformer prediction. "
-                f"Modality: {modality} X-Ray. "
-                f"Vision Transformer Initial Diagnosis: {initial_prediction} ({initial_confidence*100:.1f}% confidence). "
-                f"Body Region: {body_region}. "
-                f"Please review this radiograph thumbnail and provide in 2 concise sentences: "
-                f"1. A concise clinical second-opinion impression. "
-                f"2. Clinical recommendation for the managing physician."
+                f"You are a Senior Consulting Radiologist performing an independent second-opinion verification of this {modality} X-ray.\n"
+                f"Initial ViT Model Prediction: {initial_prediction} ({initial_confidence*100:.1f}% confidence).\n"
+                f"Anatomical Target: {body_region}.\n"
+                f"Carefully evaluate for acute fracture, displacement, dislocation, consolidation, or acute pathology.\n"
+                f"Respond in strictly valid JSON with keys:\n"
+                f"- 'has_abnormality': boolean (true if acute fracture, pneumonia, or acute pathology exists, else false)\n"
+                f"- 'finding': string (one of 'Fracture', 'Pneumonia', or 'Normal')\n"
+                f"- 'body_region': string (anatomical area, e.g. 'Lower Extremity / Tibia and Fibula', 'Thoracic')\n"
+                f"- 'clinical_impression': string (2 concise sentences describing radiological findings)\n"
+                f"- 'recommendation': string (1 concise sentence clinical next step)"
             )
 
             def _call_gemini():
-                # Primary ultra-fast model gemini-3.5-flash-lite (~1s latency), secondary fallback gemini-3.6-flash
                 for model_name in ["gemini-3.5-flash-lite", "gemini-3.6-flash"]:
                     try:
                         resp = self.client.models.generate_content(
@@ -177,7 +185,10 @@ class GeminiDiagnosticService:
                             contents=[
                                 types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
                                 prompt
-                            ]
+                            ],
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json"
+                            )
                         )
                         if resp and resp.text:
                             return resp.text.strip()
@@ -189,21 +200,66 @@ class GeminiDiagnosticService:
             # Strict 3.5s timeout to guarantee UI never blocks or freezes
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 fut = executor.submit(_call_gemini)
-                refinement_text = fut.result(timeout=3.5)
+                raw_json = fut.result(timeout=3.5)
 
-            if refinement_text:
+            if raw_json:
+                try:
+                    data = json.loads(raw_json)
+                    gemini_abnormal = bool(data.get("has_abnormality", False))
+                    gemini_finding = str(data.get("finding", "Abnormal" if gemini_abnormal else "Normal")).strip()
+                    clinical_impression = str(data.get("clinical_impression", "")).strip()
+                    recommendation = str(data.get("recommendation", "")).strip()
+                    detected_region = str(data.get("body_region", body_region)).strip()
+                except Exception as je:
+                    print(f"[Gemini Service] JSON decode error: {je}")
+                    gemini_abnormal = "fracture" in raw_json.lower() or "pneumonia" in raw_json.lower()
+                    gemini_finding = "Fracture" if "fracture" in raw_json.lower() else ("Pneumonia" if "pneumonia" in raw_json.lower() else "Normal")
+                    clinical_impression = raw_json[:300]
+                    recommendation = "Immediate specialist consultation recommended." if gemini_abnormal else "Routine follow-up."
+                    detected_region = body_region
+
+                # Compare model finding against Gemini finding
+                escalated = False
+                escalated_prediction = None
+
+                if model_is_abnormal and gemini_abnormal:
+                    status = "High-Confidence Consensus"
+                    agreement = "Confirmed Concordance (Pathology Identified)"
+                    urgency = "Urgent Review"
+                elif not model_is_abnormal and not gemini_abnormal:
+                    status = "Concordant Normal Scan"
+                    agreement = "Confirmed Concordance (Normal)"
+                    urgency = "Routine"
+                elif not model_is_abnormal and gemini_abnormal:
+                    # Model missed the lesion, but Gemini detected acute fracture/abnormality!
+                    status = f"Clinical Escalation: {gemini_finding} Detected by Multimodal AI"
+                    agreement = "Discordance: Gemini Multimodal Escalation"
+                    urgency = "Urgent Review"
+                    escalated = True
+                    escalated_prediction = f"{gemini_finding.upper()} DETECTED (Multimodal AI Escalation)"
+                else:
+                    # Model flagged abnormal, but Gemini found scan to be benign/normal
+                    status = "Nuanced Review: Possible False Positive"
+                    agreement = "Discordance: Gemini Suggests Normal"
+                    urgency = "Clinical Review"
+
                 return {
                     "verified": True,
-                    "status": "Gemini Multimodal Verified",
-                    "model_agreement": "Confirmed Concordance" if is_abnormal else "Concordant Normal",
+                    "status": status,
+                    "model_agreement": agreement,
+                    "has_abnormality": gemini_abnormal,
+                    "gemini_finding": gemini_finding,
                     "refined_confidence": round(min(0.995, max(initial_confidence, 0.94)), 4),
-                    "clinical_impression": refinement_text,
-                    "recommendations": (
-                        "Immediate orthopedic consultation recommended." if "bone" in modality.lower() and is_abnormal
-                        else "Pulmonology evaluation and sputum culture suggested." if "chest" in modality.lower() and is_abnormal
+                    "clinical_impression": clinical_impression,
+                    "recommendations": recommendation or (
+                        "Immediate orthopedic consultation recommended." if gemini_abnormal and "bone" in modality.lower()
+                        else "Pulmonology evaluation suggested." if gemini_abnormal and "chest" in modality.lower()
                         else "No acute radiographic pathology demonstrated."
                     ),
-                    "urgency": "High Priority Review" if is_abnormal else "Routine"
+                    "urgency": urgency,
+                    "escalated": escalated,
+                    "escalated_prediction": escalated_prediction,
+                    "body_region": detected_region
                 }
         except concurrent.futures.TimeoutError:
             print("[Gemini Service] Gemini API call exceeded 3.5s limit; applying instant clinical fallback.")

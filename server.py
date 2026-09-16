@@ -255,7 +255,7 @@ async def predict_scan(
         findings = result.get("findings", [])
 
         # Check if abnormality detected
-        is_abnormal = "abnormal" in prediction.lower() or "fracture" in prediction.lower() or "pneumonia" in prediction.lower()
+        is_abnormal = not any(w in prediction.lower() for w in ["normal", "no fracture", "healthy", "negative", "clear"])
 
         # Generate annotated image
         annotated_filename = f"annotated_{unique_name}"

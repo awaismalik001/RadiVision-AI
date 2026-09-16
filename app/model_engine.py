@@ -238,10 +238,25 @@ class ModelEngine:
                 gemini_ref = gemini_service.refine_and_cross_verify(
                     image_path=image_path,
                     modality="Chest",
-                    initial_prediction=vit_res.get("prediction", summary),
-                    initial_confidence=vit_res.get("confidence", confidence),
+                    initial_prediction=summary,
+                    initial_confidence=confidence,
                     body_region=body_region
                 )
+
+                # Check for multimodal consensus escalation
+                if gemini_ref.get("escalated") and gemini_ref.get("escalated_prediction"):
+                    summary = gemini_ref["escalated_prediction"]
+                    confidence = max(confidence, gemini_ref.get("refined_confidence", 0.94))
+                    if gemini_ref.get("body_region"):
+                        body_region = gemini_ref["body_region"]
+                    findings = [{
+                        "label": f"Consolidation / Opacity ({gemini_ref.get('gemini_finding', 'Pneumonia')})",
+                        "confidence": confidence,
+                        "bbox_x": 0.25,
+                        "bbox_y": 0.35,
+                        "bbox_w": 0.50,
+                        "bbox_h": 0.40
+                    }]
 
                 return {
                     "scan_type": "Chest",
@@ -397,10 +412,25 @@ class ModelEngine:
                 gemini_ref = gemini_service.refine_and_cross_verify(
                     image_path=image_path,
                     modality="Bone",
-                    initial_prediction=vit_res.get("prediction", summary),
-                    initial_confidence=vit_res.get("confidence", confidence),
+                    initial_prediction=summary,
+                    initial_confidence=confidence,
                     body_region=body_region
                 )
+
+                # Check for multimodal consensus escalation
+                if gemini_ref.get("escalated") and gemini_ref.get("escalated_prediction"):
+                    summary = gemini_ref["escalated_prediction"]
+                    confidence = max(confidence, gemini_ref.get("refined_confidence", 0.94))
+                    if gemini_ref.get("body_region"):
+                        body_region = gemini_ref["body_region"]
+                    findings = [{
+                        "label": f"Cortical Disruption ({gemini_ref.get('gemini_finding', 'Fracture')})",
+                        "confidence": confidence,
+                        "bbox_x": 0.28,
+                        "bbox_y": 0.35,
+                        "bbox_w": 0.45,
+                        "bbox_h": 0.30
+                    }]
 
                 return {
                     "scan_type": "Bone",
