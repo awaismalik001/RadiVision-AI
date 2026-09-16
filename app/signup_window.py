@@ -68,7 +68,7 @@ class SignUpWindow(QWidget):
         title.setStyleSheet(f"font-size: {FONT_LG}; font-weight: bold; color: {PRIMARY_NAVY};")
         card_layout.addWidget(title)
 
-        sub = QLabel("Register as an Authorized Clinician or Administrator", card)
+        sub = QLabel("Register as an Authorized Clinician", card)
         sub.setAlignment(Qt.AlignCenter)
         sub.setStyleSheet(f"font-size: {FONT_XS}; color: {TEXT_MUTED}; margin-bottom: 4px;")
         card_layout.addWidget(sub)
@@ -127,15 +127,6 @@ class SignUpWindow(QWidget):
         self.confirm_input.setFixedHeight(28)
         card_layout.addWidget(self.confirm_input)
 
-        # Role
-        lbl_rl = QLabel("Assigned Role", card)
-        lbl_rl.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
-        card_layout.addWidget(lbl_rl)
-        self.role_combo = QComboBox(card)
-        self.role_combo.addItems(["User", "Admin"])
-        self.role_combo.setFixedHeight(28)
-        card_layout.addWidget(self.role_combo)
-
         # Register Button
         card_layout.addSpacing(4)
         self.register_btn = QPushButton("Complete Registration", card)
@@ -180,7 +171,7 @@ class SignUpWindow(QWidget):
         email = self.email_input.text().strip()
         password = self.pass_input.text()
         confirm = self.confirm_input.text()
-        role = self.role_combo.currentText()
+        role = "User"
 
         if not all([full_name, username, email, password, confirm]):
             self.show_message("Please fill out all registration fields.", is_error=True)
@@ -205,8 +196,8 @@ class SignUpWindow(QWidget):
 
         try:
             pw_hash = hash_password(password)
-            user_id = db.create_user(full_name, username, email, pw_hash, role)
-            db.log_activity(user_id, username, "ACCOUNT_CREATED", f"Registered with role {role}")
+            user_id = db.create_user(full_name, username, email, pw_hash, "User")
+            db.log_activity(user_id, username, "ACCOUNT_CREATED", "Registered with role User")
             
             QMessageBox.information(self, "Registration Successful", "Your account has been successfully created. You can now sign in.")
             if self.switch_to_login:

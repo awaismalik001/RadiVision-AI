@@ -99,7 +99,9 @@ async def signup(user_data: dict):
     email = user_data.get("email", "").strip()
     phone = user_data.get("phone", "").strip()
     password = user_data.get("password", "")
-    role = user_data.get("role", "User")
+    
+    # Strictly enforce 'User' role: Public registration creates only standard User accounts
+    role = "User"
 
     if not full_name or not username or not email or not password:
         raise HTTPException(status_code=400, detail="All fields are required.")
@@ -115,8 +117,8 @@ async def signup(user_data: dict):
         raise HTTPException(status_code=409, detail=f"Username '{username}' is already registered.")
 
     pw_hash = hash_password(password)
-    user_id = db.create_user(full_name=full_name, username=username, email=email, password_hash=pw_hash, role=role, phone=phone)
-    db.log_activity(user_id, username, "USER_REGISTERED", f"Account created with role: {role}")
+    user_id = db.create_user(full_name=full_name, username=username, email=email, password_hash=pw_hash, role="User", phone=phone)
+    db.log_activity(user_id, username, "USER_REGISTERED", "Account created with role: User")
 
     safe_user = {
         "user_id": user_id,
@@ -124,7 +126,7 @@ async def signup(user_data: dict):
         "username": username,
         "email": email,
         "phone": phone,
-        "role": role,
+        "role": "User",
         "is_active": 1
     }
     return {"success": True, "message": "Account created successfully.", "user": safe_user}

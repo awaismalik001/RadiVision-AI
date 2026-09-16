@@ -350,17 +350,8 @@ class LoginWindow(QWidget):
         self.sign_confirm.setFixedHeight(28)
         signup_layout.addWidget(self.sign_confirm)
 
-        # Role Selector
-        lbl_srole = QLabel("Access Role", signup_page)
-        lbl_srole.setStyleSheet(f"font-size: {FONT_SM}; color: {TEXT_SECONDARY};")
-        signup_layout.addWidget(lbl_srole)
-        self.sign_role = QComboBox(signup_page)
-        self.sign_role.addItems(["User (Clinician)", "Admin (Administrator)"])
-        self.sign_role.setFixedHeight(28)
-        signup_layout.addWidget(self.sign_role)
-
         # Create account button
-        signup_layout.addSpacing(2)
+        signup_layout.addSpacing(4)
         self.btn_create_acc = QPushButton("Create account", signup_page)
         self.btn_create_acc.setFixedHeight(32)
         self.btn_create_acc.setCursor(Qt.PointingHandCursor)
@@ -451,8 +442,7 @@ class LoginWindow(QWidget):
         email = self.sign_email.text().strip()
         password = self.sign_pass.text()
         confirm = self.sign_confirm.text()
-        raw_role = self.sign_role.currentText()
-        role = "Admin" if "Admin" in raw_role else "User"
+        role = "User"
 
         if not all([full_name, username, email, password, confirm]):
             self.show_signup_status("Please fill out all registration fields.", is_error=True)
@@ -482,8 +472,8 @@ class LoginWindow(QWidget):
 
         try:
             pw_hash = hash_password(password)
-            user_id = db.create_user(full_name, username, email, pw_hash, role)
-            db.log_activity(user_id, username, "ACCOUNT_CREATED", f"Registered with role {role}")
+            user_id = db.create_user(full_name, username, email, pw_hash, "User")
+            db.log_activity(user_id, username, "ACCOUNT_CREATED", "Registered with role User")
 
             QMessageBox.information(
                 self,

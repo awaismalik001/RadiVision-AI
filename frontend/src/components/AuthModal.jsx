@@ -22,7 +22,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('User');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -56,7 +55,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
           email: email,
           phone: phone,
           password: password,
-          role: role
+          role: 'User'
         });
 
         if (res.data && res.data.success) {
@@ -191,7 +190,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
                   </div>
 
                   {/* Password */}
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                       Password
                     </label>
@@ -211,37 +210,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
                         {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Account Role */}
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                      Account Role
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setRole('User')}
-                        className={`py-1.5 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                          role === 'User' 
-                            ? 'border-[#1982bf] bg-blue-50 text-[#1982bf]' 
-                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        User
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setRole('Admin')}
-                        className={`py-1.5 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                          role === 'Admin' 
-                            ? 'border-[#1982bf] bg-blue-50 text-[#1982bf]' 
-                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        Admin
                       </button>
                     </div>
                   </div>
