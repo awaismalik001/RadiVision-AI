@@ -105,6 +105,7 @@ export default function DiagnosticStudio({ currentUser }) {
       formData.append("patient_gender", patientGender);
       formData.append("patient_id", patientId);
       formData.append("location", location);
+      formData.append("user_id", currentUser?.user_id || 2);
 
       const resp = await axios.post('/api/predict', formData, {
         headers: { "Content-Type": "multipart/form-data" }

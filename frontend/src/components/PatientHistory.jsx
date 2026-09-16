@@ -34,7 +34,11 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const resp = await axios.get('/api/history');
+      const isInstitutionalAdmin = currentUser?.role === 'Admin' && !isMyHistory;
+      const url = isInstitutionalAdmin
+        ? '/api/history'
+        : `/api/history?user_id=${currentUser?.user_id || 2}`;
+      const resp = await axios.get(url);
       setScans(resp.data.scans || []);
     } catch (err) {
       console.error("[PatientHistory] Failed to load scan records:", err);
@@ -45,7 +49,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
 
   useEffect(() => {
     fetchHistory();
-  }, []);
+  }, [currentUser, isMyHistory]);
 
   const handleDownloadPdf = async (scan) => {
     setDownloadingId(scan.scan_id);

@@ -97,6 +97,7 @@ async def signup(user_data: dict):
     full_name = user_data.get("full_name", "").strip()
     username = user_data.get("username", "").strip()
     email = user_data.get("email", "").strip()
+    phone = user_data.get("phone", "").strip()
     password = user_data.get("password", "")
     role = user_data.get("role", "User")
 
@@ -114,7 +115,7 @@ async def signup(user_data: dict):
         raise HTTPException(status_code=409, detail=f"Username '{username}' is already registered.")
 
     pw_hash = hash_password(password)
-    user_id = db.create_user(full_name=full_name, username=username, email=email, password_hash=pw_hash, role=role)
+    user_id = db.create_user(full_name=full_name, username=username, email=email, password_hash=pw_hash, role=role, phone=phone)
     db.log_activity(user_id, username, "USER_REGISTERED", f"Account created with role: {role}")
 
     safe_user = {
@@ -122,6 +123,7 @@ async def signup(user_data: dict):
         "full_name": full_name,
         "username": username,
         "email": email,
+        "phone": phone,
         "role": role,
         "is_active": 1
     }
@@ -220,7 +222,7 @@ async def predict_scan(
     patient_gender: str = Form("Female"),
     patient_id: Optional[str] = Form(None),
     location: str = Form("New York"),
-    user_id: Optional[int] = Form(1),
+    user_id: Optional[int] = Form(2),
 ):
     """
     Executes deep learning inference on an uploaded radiograph.

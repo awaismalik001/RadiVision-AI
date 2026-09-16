@@ -27,7 +27,8 @@ export default function UserDashboard({ currentUser, onNavigate }) {
   const fetchRecentScans = async () => {
     setLoading(true);
     try {
-      const resp = await axios.get('/api/history');
+      const userId = currentUser?.user_id || 2;
+      const resp = await axios.get(`/api/history?user_id=${userId}`);
       setScans(resp.data.scans || []);
     } catch (err) {
       console.error('[Dashboard] Failed to load scans:', err);
@@ -38,7 +39,7 @@ export default function UserDashboard({ currentUser, onNavigate }) {
 
   useEffect(() => {
     fetchRecentScans();
-  }, []);
+  }, [currentUser]);
 
   const handleDownloadPdf = async (scan) => {
     setDownloadingId(scan.scan_id);
@@ -171,60 +172,32 @@ export default function UserDashboard({ currentUser, onNavigate }) {
             </div>
           </div>
 
-          {/* Card 3: Profile Settings for Clinician, PACS Records for Admin */}
-          {currentUser?.role === 'Admin' ? (
-            <div 
-              onClick={() => onNavigate('history')}
-              className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#1982bf]/50 transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-colors">
-                    <Database className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                    Hospital PACS
-                  </span>
+          {/* Card 3: User Profile & Security */}
+          <div 
+            onClick={() => onNavigate('profile')}
+            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#1982bf]/50 transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#1982bf] flex items-center justify-center group-hover:bg-[#1982bf] group-hover:text-white transition-colors">
+                  <User className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-slate-900 text-base group-hover:text-slate-900 transition-colors">
-                  PACS Patient Records
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Search institutional patient records across all modalities and export official RSNA-compliant PDF reports.
-                </p>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#1982bf]">
+                  Active Session
+                </span>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-700">
-                <span>Search Database</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
+              <h3 className="font-bold text-slate-900 text-base group-hover:text-[#1982bf] transition-colors">
+                User Profile & Security
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Inspect your verified user credentials, assigned security role, and workstation details.
+              </p>
             </div>
-          ) : (
-            <div 
-              onClick={() => onNavigate('profile')}
-              className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#1982bf]/50 transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#1982bf] flex items-center justify-center group-hover:bg-[#1982bf] group-hover:text-white transition-colors">
-                    <User className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#1982bf]">
-                    Read-Only
-                  </span>
-                </div>
-                <h3 className="font-bold text-slate-900 text-base group-hover:text-[#1982bf] transition-colors">
-                  User Profile & Security
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Inspect your verified credentials, assigned role, and workstation security vault.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#1982bf]">
-                <span>View Profile</span>
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#1982bf]">
+              <span>View Profile</span>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
-          )}
+          </div>
         </div>
 
         {/* Telemetry KPI Metrics */}

@@ -44,10 +44,17 @@ class DatabaseManager:
                     email TEXT UNIQUE NOT NULL,
                     password_hash TEXT NOT NULL,
                     role TEXT CHECK(role IN ('Admin', 'User')) NOT NULL DEFAULT 'User',
+                    phone TEXT,
                     is_active INTEGER NOT NULL DEFAULT 1,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
             """)
+
+            # Ensure phone column exists for existing installations
+            cursor.execute("PRAGMA table_info(users);")
+            u_cols = [r[1] for r in cursor.fetchall()]
+            if "phone" not in u_cols:
+                cursor.execute("ALTER TABLE users ADD COLUMN phone TEXT;")
 
             # 2. Patients Table
             cursor.execute("""
@@ -128,13 +135,13 @@ class DatabaseManager:
                 conn.commit()
 
     # ----------------- User Management -----------------
-    def create_user(self, full_name: str, username: str, email: str, password_hash: str, role: str = 'User') -> int:
+    def create_user(self, full_name: str, username: str, email: str, password_hash: str, role: str = 'User', phone: str = "") -> int:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO users (full_name, username, email, password_hash, role)
-                VALUES (?, ?, ?, ?, ?);
-            """, (full_name.strip(), username.strip(), email.strip(), password_hash, role))
+                INSERT INTO users (full_name, username, email, password_hash, role, phone)
+                VALUES (?, ?, ?, ?, ?, ?);
+            """, (full_name.strip(), username.strip(), email.strip(), password_hash, role, phone.strip() if phone else ""))
             conn.commit()
             return cursor.lastrowid
 

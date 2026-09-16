@@ -169,10 +169,10 @@ export default function ProfileManagement({ currentUser }) {
 
         {/* Profile Card & Edit Form */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
-          {/* Clinician Identity Card */}
+          {/* User Identity Card */}
           <div className="flex items-center space-x-4 pb-5 border-b border-slate-100 mb-6">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#1982BF] to-cyan-500 text-white font-bold text-xl flex items-center justify-center shadow-md">
-              {fullName ? fullName.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'AW'}
+              {fullName ? fullName.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'AM'}
             </div>
             <div>
               <div className="text-base font-bold text-slate-900">{fullName || 'User'}</div>
