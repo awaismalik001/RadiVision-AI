@@ -354,17 +354,17 @@ class DatabaseManager:
     def get_dashboard_stats(self, user_id: Optional[int] = None) -> Dict[str, int]:
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            user_filter = "WHERE user_id = ?" if user_id is not None else ""
+            user_clause = "WHERE user_id = ?" if user_id is not None else ""
             params = (user_id,) if user_id is not None else ()
 
-            cursor.execute(f"SELECT COUNT(*) FROM scans {user_filter};", params)
+            cursor.execute(f"SELECT COUNT(*) FROM scans {user_clause};", params)
             total_scans = cursor.fetchone()[0]
 
-            cursor.execute(f"SELECT COUNT(*) FROM scans {user_filter} {'AND' if user_filter else 'WHERE'} prediction LIKE '%Abnormal%' OR prediction LIKE '%Pneumonia%' OR prediction LIKE '%Fracture%';", params)
+            abn_where = "WHERE " + ("user_id = ? AND " if user_id is not None else "") + "(prediction LIKE '%Abnormal%' OR prediction LIKE '%Pneumonia%' OR (prediction LIKE '%Fracture%' AND prediction NOT LIKE '%No Fracture%'))"
+            cursor.execute(f"SELECT COUNT(*) FROM scans {abn_where};", params)
             abnormal_scans = cursor.fetchone()[0]
 
-            cursor.execute(f"SELECT COUNT(*) FROM scans {user_filter} {'AND' if user_filter else 'WHERE'} prediction LIKE '%Normal%' OR prediction LIKE '%Healthy%';", params)
-            normal_scans = cursor.fetchone()[0]
+            normal_scans = total_scans - abnormal_scans
 
             cursor.execute("SELECT COUNT(*) FROM patients;")
             total_patients = cursor.fetchone()[0]
