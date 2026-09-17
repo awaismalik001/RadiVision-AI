@@ -105,10 +105,13 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
 
   // Filter scans
   const filteredScans = scans.filter((scan) => {
-    const matchesSearch =
-      (scan.patient_name && scan.patient_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (scan.patient_contact && scan.patient_contact.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (scan.prediction && scan.prediction.toLowerCase().includes(searchQuery.toLowerCase()));
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = isMyHistory
+      ? (scan.prediction && scan.prediction.toLowerCase().includes(q)) ||
+        (scan.scan_type && scan.scan_type.toLowerCase().includes(q))
+      : (scan.patient_name && scan.patient_name.toLowerCase().includes(q)) ||
+        (scan.patient_contact && scan.patient_contact.toLowerCase().includes(q)) ||
+        (scan.prediction && scan.prediction.toLowerCase().includes(q));
 
     const matchesModality =
       selectedModality === "ALL" ||
@@ -162,7 +165,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by Patient, MRN, or Diagnosis..."
+              placeholder={isMyHistory ? "Search by Diagnosis or Modality..." : "Search by Patient, MRN, or Diagnosis..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1982bf] focus:bg-white transition-all"
@@ -195,7 +198,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
                   <th className="py-2.5 px-3">Radiograph</th>
-                  <th className="py-2.5 px-3">Patient / National ID</th>
+                  {!isMyHistory && <th className="py-2.5 px-3">Patient / National ID</th>}
                   <th className="py-2.5 px-3">Modality</th>
                   <th className="py-2.5 px-3">ViT Diagnostic Finding</th>
                   <th className="py-2.5 px-3">Confidence</th>
@@ -206,7 +209,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
               <tbody className="divide-y divide-slate-100">
                 {filteredScans.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-10 text-center text-slate-400 text-xs">
+                    <td colSpan={isMyHistory ? 6 : 7} className="py-10 text-center text-slate-400 text-xs">
                       {loading ? "Loading scan archive..." : "No scan records found matching your filters."}
                     </td>
                   </tr>
@@ -240,12 +243,14 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                           </div>
                         </td>
 
-                        <td className="py-2.5 px-3">
-                          <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
-                          <div className="text-[10px] font-mono text-slate-500">
-                            {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
-                          </div>
-                        </td>
+                        {!isMyHistory && (
+                          <td className="py-2.5 px-3">
+                            <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
+                            <div className="text-[10px] font-mono text-slate-500">
+                              {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
+                            </div>
+                          </td>
+                        )}
 
                         <td className="py-2.5 px-3">
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
@@ -316,7 +321,11 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
             <div className="p-4 bg-[#1982bf] text-white flex items-center justify-between">
               <div className="font-bold text-sm flex items-center space-x-2">
                 <Layers className="w-4 h-4" />
-                <span>PACS Radiograph Inspection — {selectedPreviewScan.patient_name}</span>
+                <span>
+                  {isMyHistory 
+                    ? `Radiograph Inspection — Study #${selectedPreviewScan.scan_id}`
+                    : `PACS Radiograph Inspection — ${selectedPreviewScan.patient_name || 'Anonymous Patient'}`}
+                </span>
               </div>
               <button 
                 onClick={() => setSelectedPreviewScan(null)}

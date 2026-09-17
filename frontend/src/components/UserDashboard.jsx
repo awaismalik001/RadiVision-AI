@@ -285,7 +285,7 @@ export default function UserDashboard({ currentUser, onNavigate }) {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
-                  <th className="py-2.5 px-3">Patient / ID</th>
+                  <th className="py-2.5 px-3">{isAdmin ? "Patient / ID" : "Study Reference"}</th>
                   <th className="py-2.5 px-3">Modality</th>
                   <th className="py-2.5 px-3">Primary Finding</th>
                   <th className="py-2.5 px-3">Confidence</th>
@@ -309,10 +309,18 @@ export default function UserDashboard({ currentUser, onNavigate }) {
                     return (
                       <tr key={scan.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-2.5 px-3">
-                          <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
-                          <div className="text-[10px] font-mono text-slate-500">
-                            {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
-                          </div>
+                          {isAdmin ? (
+                            <>
+                              <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
+                              <div className="text-[10px] font-mono text-slate-500">
+                                {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="font-semibold text-slate-900 text-[13px] font-mono">
+                              {`Study #RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
+                            </div>
+                          )}
                         </td>
                         <td className="py-2.5 px-3">
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
