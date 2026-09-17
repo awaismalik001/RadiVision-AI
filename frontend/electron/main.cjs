@@ -9,8 +9,153 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const { spawn, exec } = require('child_process');
 
 let mainWindow = null;
+let backendProcess = null;
+
+/**
+ * Health check to verify if the FastAPI server is responding on port 8000.
+ */
+function checkBackendHealth(timeoutMs = 1200) {
+  return new Promise((resolve) => {
+    const req = http.get('http://127.0.0.1:8000/api/health', (res) => {
+      resolve(res.statusCode === 200);
+    });
+    req.on('error', () => resolve(false));
+    req.setTimeout(timeoutMs, () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
+
+/**
+ * Polls the backend health endpoint until it is online.
+ */
+async function waitForBackend(maxAttempts = 35, intervalMs = 600) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const isUp = await checkBackendHealth();
+    if (isUp) return true;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return false;
+}
+
+/**
+ * Automatically launches the RadiVision AI backend in the background.
+ */
+function startBackend() {
+  return new Promise(async (resolve) => {
+    try {
+      const alreadyRunning = await checkBackendHealth(800);
+      if (alreadyRunning) {
+        console.log('[Electron] RadiVision AI backend is already active on port 8000.');
+        return resolve(true);
+      }
+
+      let executablePath = '';
+      let args = [];
+      let cwd = '';
+      let env = { ...process.env };
+
+      if (app.isPackaged) {
+        // Packaged desktop app: search in process.resourcesPath
+        const candidates = [
+          path.join(process.resourcesPath, 'backend', 'server', 'server.exe'),
+          path.join(process.resourcesPath, 'backend', 'server.exe'),
+          path.join(process.resourcesPath, 'server', 'server.exe')
+        ];
+        for (const cand of candidates) {
+          if (fs.existsSync(cand)) {
+            executablePath = cand;
+            cwd = path.dirname(cand);
+            break;
+          }
+        }
+        env.RADIVISION_ROOT = process.resourcesPath;
+      } else {
+        // Development mode: check if standalone binary exists, else fallback to python
+        const devBinary = path.join(__dirname, '..', '..', 'dist-server', 'server', 'server.exe');
+        const projectRoot = path.join(__dirname, '..', '..');
+
+        if (fs.existsSync(devBinary)) {
+          executablePath = devBinary;
+          cwd = path.dirname(devBinary);
+          env.RADIVISION_ROOT = projectRoot;
+        } else {
+          executablePath = 'python';
+          args = ['server.py'];
+          cwd = projectRoot;
+        }
+      }
+
+      if (!executablePath) {
+        console.warn('[Electron] Could not locate backend executable. Relying on existing service.');
+        return resolve(false);
+      }
+
+      console.log(`[Electron] Spawning background AI backend: ${executablePath} (CWD: ${cwd})`);
+      backendProcess = spawn(executablePath, args, {
+        cwd: cwd,
+        env: env,
+        windowsHide: true,
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+
+      backendProcess.stdout.on('data', (data) => {
+        console.log(`[Backend] ${data.toString().trim()}`);
+      });
+
+      backendProcess.stderr.on('data', (data) => {
+        console.warn(`[Backend ERR] ${data.toString().trim()}`);
+      });
+
+      backendProcess.on('error', (err) => {
+        console.error('[Electron] Backend process error:', err);
+      });
+
+      backendProcess.on('exit', (code, signal) => {
+        console.log(`[Electron] Backend process terminated with code ${code}, signal ${signal}`);
+        backendProcess = null;
+      });
+
+      // Wait for backend to finish warming up
+      const ready = await waitForBackend();
+      if (ready) {
+        console.log('[Electron] RadiVision AI backend is ready and listening.');
+      } else {
+        console.warn('[Electron] Timed out waiting for backend. UI will continue loading.');
+      }
+      resolve(ready);
+    } catch (err) {
+      console.error('[Electron] Exception during backend launch:', err);
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * Cleanly terminates the background backend process upon app exit.
+ */
+function stopBackend() {
+  if (backendProcess && backendProcess.pid) {
+    console.log('[Electron] Terminating background AI engine...');
+    try {
+      if (process.platform === 'win32') {
+        exec(`taskkill /pid ${backendProcess.pid} /T /F`, (err) => {
+          if (err) console.warn('[Electron] taskkill warning:', err.message);
+        });
+      } else {
+        backendProcess.kill();
+      }
+    } catch (e) {
+      console.error('[Electron] Error stopping backend:', e);
+    }
+    backendProcess = null;
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -161,6 +306,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // Concurrently initiate silent background backend launch and render UI window
+  startBackend();
   createWindow();
 
   app.on('activate', () => {
@@ -170,7 +317,16 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('before-quit', () => {
+  stopBackend();
+});
+
+app.on('will-quit', () => {
+  stopBackend();
+});
+
 app.on('window-all-closed', () => {
+  stopBackend();
   if (process.platform !== 'darwin') {
     app.quit();
   }

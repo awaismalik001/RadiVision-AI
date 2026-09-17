@@ -25,7 +25,7 @@ except ImportError:
     HAS_GENAI = False
 
 from dotenv import load_dotenv
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, ".env"))
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")

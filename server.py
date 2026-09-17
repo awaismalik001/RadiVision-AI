@@ -30,8 +30,13 @@ try:
 except ImportError:
     pass
 
-# Add project root to sys.path
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+# Add project root to sys.path with PyInstaller freeze support
+if getattr(sys, 'frozen', False):
+    PROJECT_ROOT = os.environ.get("RADIVISION_ROOT") or os.path.dirname(sys.executable)
+else:
+    PROJECT_ROOT = os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.abspath(__file__))
+
+os.environ["RADIVISION_ROOT"] = PROJECT_ROOT
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
@@ -556,4 +561,6 @@ if os.path.exists(FRONTEND_DIST):
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=False)
+    import multiprocessing
+    multiprocessing.freeze_support()
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)

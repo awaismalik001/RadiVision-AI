@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from app.encryption import pacs_cipher
 
-DB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "database")
+DB_DIR = os.path.join(os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "database")
 DB_PATH = os.path.join(DB_DIR, "xray_system.db")
 
 class DatabaseManager:

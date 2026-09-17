@@ -19,7 +19,7 @@ except (ImportError, OSError, Exception):
 
 from PIL import Image, ImageDraw, ImageFont
 
-REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
+REPORTS_DIR = os.path.join(os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
 
 def draw_findings_overlay(
     image_path: str,

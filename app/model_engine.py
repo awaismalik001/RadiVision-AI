@@ -52,7 +52,7 @@ try:
 except (ImportError, OSError, Exception):
     HAS_YOLO = False
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, "model")
 
 TYPE_MODEL_PATH = os.path.join(MODELS_DIR, "type_classifier", "xray_type_classifier.h5")

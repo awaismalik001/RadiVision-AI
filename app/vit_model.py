@@ -18,7 +18,7 @@ import torchvision.models as models
 from PIL import Image
 from typing import Dict, Any, Tuple, Optional
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VIT_WEIGHTS_PATH = os.path.join(BASE_DIR, "model", "vit", "vit_diagnostic_model.pt")
 CHEST_DATASET_DIR = os.path.join(BASE_DIR, "dataset", "chest_xray")
 BONE_DATASET_DIR = os.path.join(BASE_DIR, "dataset", "bone_xray")

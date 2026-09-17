@@ -17,7 +17,7 @@ from openpyxl.utils import get_column_letter
 
 from app.database import db
 
-REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
+REPORTS_DIR = os.path.join(os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
 def generate_excel_export(output_filename: Optional[str] = None) -> str:

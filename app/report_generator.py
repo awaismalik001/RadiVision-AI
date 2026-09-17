@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 from PIL import Image
 
-REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
+REPORTS_DIR = os.path.join(os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
 
 try:
     from reportlab.lib.pagesizes import letter

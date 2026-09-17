@@ -1,7 +1,10 @@
 {
-  "name": "frontend",
+  "name": "radivision-ai",
+  "productName": "RadiVision AI",
+  "description": "RadiVision AI — Professional Medical X-Ray Diagnostic Suite",
+  "author": "RadiVision AI Medical Systems",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -10,7 +13,11 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "electron": "electron .",
-    "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron electron/main.cjs\""
+    "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron electron/main.cjs\"",
+    "package:backend": "python ../build_backend.py",
+    "package:dir": "vite build && electron-builder --dir",
+    "package:dist": "vite build && electron-builder",
+    "package:portable": "vite build && electron-builder --win portable"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -30,10 +37,77 @@
     "autoprefixer": "^10.6.0",
     "concurrently": "^10.0.5",
     "electron": "^44.4.1",
+    "electron-builder": "^26.15.3",
     "oxlint": "^1.81.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.0",
     "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.radivision.ai",
+    "productName": "RadiVision AI",
+    "copyright": "Copyright © 2026 RadiVision AI Medical Systems",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist-server/server",
+        "to": "backend/server",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../database",
+        "to": "database",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../model",
+        "to": "model",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../reports",
+        "to": "reports",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../uploads",
+        "to": "uploads",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../assets",
+        "to": "assets",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RadiVision AI"
+    }
   }
 }
