@@ -182,6 +182,8 @@ def places_autocomplete(query: str = "", country: Optional[str] = None):
                 "types": "(cities)",
                 "key": api_key
             }
+            if not country or country.lower() == "pakistan":
+                params["components"] = "country:pk"
             url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
             resp = requests.get(url, params=params, timeout=3)
             if resp.status_code == 200:
@@ -192,7 +194,7 @@ def places_autocomplete(query: str = "", country: Optional[str] = None):
                     desc = p.get("description", "")
                     terms = [t.get("value") for t in p.get("terms", [])]
                     city_name = terms[0] if terms else desc.split(",")[0].strip()
-                    country_name = terms[-1] if len(terms) > 1 else (country or "Global")
+                    country_name = "Pakistan" if (not country or country.lower() == "pakistan" or "pakistan" in desc.lower()) else (terms[-1] if len(terms) > 1 else (country or "Global"))
                     results.append({
                         "description": desc,
                         "city": city_name,
@@ -204,31 +206,40 @@ def places_autocomplete(query: str = "", country: Optional[str] = None):
         except Exception as e:
             print(f"[Google Maps Autocomplete] Notice: {e}")
 
-    # Worldwide clinical cities directory
+    # Comprehensive Pakistan cities directory prioritized for quick suggestions and offline fallback
     fallback_cities = [
-        # United States
-        {"city": "New York", "country": "United States", "description": "New York, NY, USA"},
-        {"city": "Los Angeles", "country": "United States", "description": "Los Angeles, CA, USA"},
-        {"city": "Chicago", "country": "United States", "description": "Chicago, IL, USA"},
-        {"city": "Houston", "country": "United States", "description": "Houston, TX, USA"},
-        {"city": "Boston", "country": "United States", "description": "Boston, MA, USA"},
-        {"city": "San Francisco", "country": "United States", "description": "San Francisco, CA, USA"},
-        {"city": "Seattle", "country": "United States", "description": "Seattle, WA, USA"},
-        {"city": "Miami", "country": "United States", "description": "Miami, FL, USA"},
-        # United Kingdom
-        {"city": "London", "country": "United Kingdom", "description": "London, Greater London, UK"},
-        {"city": "Manchester", "country": "United Kingdom", "description": "Manchester, Greater Manchester, UK"},
-        {"city": "Birmingham", "country": "United Kingdom", "description": "Birmingham, West Midlands, UK"},
-        {"city": "Edinburgh", "country": "United Kingdom", "description": "Edinburgh, Scotland, UK"},
-        # Pakistan
+        # Pakistan Major Cities
+        {"city": "Rawalpindi", "country": "Pakistan", "description": "Rawalpindi, Punjab, Pakistan"},
         {"city": "Islamabad", "country": "Pakistan", "description": "Islamabad, Federal Capital, Pakistan"},
         {"city": "Lahore", "country": "Pakistan", "description": "Lahore, Punjab, Pakistan"},
         {"city": "Karachi", "country": "Pakistan", "description": "Karachi, Sindh, Pakistan"},
-        {"city": "Rawalpindi", "country": "Pakistan", "description": "Rawalpindi, Punjab, Pakistan"},
-        {"city": "Faisalabad", "country": "Pakistan", "description": "Faisalabad, Punjab, Pakistan"},
         {"city": "Peshawar", "country": "Pakistan", "description": "Peshawar, Khyber Pakhtunkhwa, Pakistan"},
+        {"city": "Faisalabad", "country": "Pakistan", "description": "Faisalabad, Punjab, Pakistan"},
         {"city": "Multan", "country": "Pakistan", "description": "Multan, Punjab, Pakistan"},
         {"city": "Quetta", "country": "Pakistan", "description": "Quetta, Balochistan, Pakistan"},
+        {"city": "Sialkot", "country": "Pakistan", "description": "Sialkot, Punjab, Pakistan"},
+        {"city": "Gujranwala", "country": "Pakistan", "description": "Gujranwala, Punjab, Pakistan"},
+        {"city": "Abbottabad", "country": "Pakistan", "description": "Abbottabad, Khyber Pakhtunkhwa, Pakistan"},
+        {"city": "Bahawalpur", "country": "Pakistan", "description": "Bahawalpur, Punjab, Pakistan"},
+        {"city": "Sargodha", "country": "Pakistan", "description": "Sargodha, Punjab, Pakistan"},
+        {"city": "Sukkur", "country": "Pakistan", "description": "Sukkur, Sindh, Pakistan"},
+        {"city": "Hyderabad", "country": "Pakistan", "description": "Hyderabad, Sindh, Pakistan"},
+        {"city": "Larkana", "country": "Pakistan", "description": "Larkana, Sindh, Pakistan"},
+        {"city": "Gujrat", "country": "Pakistan", "description": "Gujrat, Punjab, Pakistan"},
+        {"city": "Mardan", "country": "Pakistan", "description": "Mardan, Khyber Pakhtunkhwa, Pakistan"},
+        {"city": "Mirpur", "country": "Pakistan", "description": "Mirpur, Azad Kashmir, Pakistan"},
+        {"city": "Jhelum", "country": "Pakistan", "description": "Jhelum, Punjab, Pakistan"},
+        {"city": "Sheikhupura", "country": "Pakistan", "description": "Sheikhupura, Punjab, Pakistan"},
+        {"city": "Muzaffarabad", "country": "Pakistan", "description": "Muzaffarabad, Azad Kashmir, Pakistan"},
+        {"city": "Rahim Yar Khan", "country": "Pakistan", "description": "Rahim Yar Khan, Punjab, Pakistan"},
+        {"city": "Sahiwal", "country": "Pakistan", "description": "Sahiwal, Punjab, Pakistan"},
+        {"city": "Swat", "country": "Pakistan", "description": "Mingora, Swat, Khyber Pakhtunkhwa, Pakistan"},
+        {"city": "Wah Cantt", "country": "Pakistan", "description": "Wah Cantt, Punjab, Pakistan"},
+        {"city": "Kasur", "country": "Pakistan", "description": "Kasur, Punjab, Pakistan"},
+        {"city": "Dera Ghazi Khan", "country": "Pakistan", "description": "Dera Ghazi Khan, Punjab, Pakistan"},
+        # Global Fallbacks
+        {"city": "New York", "country": "United States", "description": "New York, NY, USA"},
+        {"city": "London", "country": "United Kingdom", "description": "London, Greater London, UK"},
         # Canada
         {"city": "Toronto", "country": "Canada", "description": "Toronto, ON, Canada"},
         {"city": "Vancouver", "country": "Canada", "description": "Vancouver, BC, Canada"},
@@ -376,7 +387,7 @@ async def update_user(user_id: int, payload: dict):
     return {"success": True, "message": msg}
 
 @app.get("/api/referrals")
-def get_referrals(location: str = "New York", modality: str = "Bone", is_abnormal: bool = True):
+def get_referrals(location: str = "Rawalpindi, Pakistan", modality: str = "Bone", is_abnormal: bool = True):
     """Returns nearby hospital and physician recommendations matched to location & modality."""
     facilities = get_recommended_facilities(location=location, modality=modality, is_abnormal=is_abnormal)
     return {"location": location, "modality": modality, "facilities": facilities}
@@ -398,8 +409,8 @@ async def predict_scan(
     patient_age: int = Form(34),
     patient_gender: str = Form("Female"),
     patient_id: Optional[str] = Form(None),
-    location: str = Form("New York"),
-    user_id: Optional[int] = Form(2),
+    location: str = Form("Rawalpindi, Pakistan"),
+    user_id: Optional[int] = Form(None),
 ):
     """
     Executes deep learning inference on an uploaded radiograph.

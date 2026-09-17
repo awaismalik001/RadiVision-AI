@@ -29,19 +29,25 @@ export default function UserDashboard({ currentUser, onNavigate }) {
   const fetchRecentScans = async () => {
     setLoading(true);
     try {
-      const url = isAdmin
-        ? '/api/history'
-        : `/api/history?user_id=${currentUser?.user_id || 2}`;
-
-      const [historyRes, analyticsRes] = await Promise.all([
-        axios.get(url).catch(() => ({ data: { scans: [] } })),
-        axios.get('/api/admin/analytics').catch(() => ({ data: null }))
-      ]);
-
-      const fetchedScans = historyRes.data?.scans || [];
-      setScans(fetchedScans);
-      if (analyticsRes.data && analyticsRes.data.success) {
-        setAnalytics(analyticsRes.data);
+      if (isAdmin) {
+        const [historyRes, analyticsRes] = await Promise.all([
+          axios.get('/api/history').catch(() => ({ data: { scans: [] } })),
+          axios.get('/api/admin/analytics').catch(() => ({ data: null }))
+        ]);
+        setScans(historyRes.data?.scans || []);
+        if (analyticsRes.data && analyticsRes.data.success) {
+          setAnalytics(analyticsRes.data);
+        }
+      } else {
+        // Regular user: STRICTLY isolated to the user's personal scans only
+        if (!currentUser?.user_id) {
+          setScans([]);
+          setAnalytics(null);
+          return;
+        }
+        const historyRes = await axios.get(`/api/history?user_id=${currentUser.user_id}`).catch(() => ({ data: { scans: [] } }));
+        setScans(historyRes.data?.scans || []);
+        setAnalytics(null); // Never display admin analytics to regular users
       }
     } catch (err) {
       console.error('[Dashboard] Failed to load scans:', err);
@@ -75,9 +81,13 @@ export default function UserDashboard({ currentUser, onNavigate }) {
   const handleDownloadPdf = async (scan) => {
     setDownloadingId(scan.scan_id);
     try {
+      const userLoc = currentUser?.city 
+        ? `${currentUser.city}, ${currentUser.country || 'Pakistan'}`
+        : (currentUser?.location || 'Rawalpindi, Pakistan');
+
       const payload = {
         patient_id: scan.patient_national_id || `RV-${scan.scan_id}`,
-        patient_name: scan.patient_name || "Patient Record",
+        patient_name: scan.patient_name || currentUser?.full_name || "Patient Record",
         patient_age: scan.patient_age || 35,
         patient_gender: scan.patient_gender || "Female",
         scan_type: scan.scan_type,
@@ -86,7 +96,7 @@ export default function UserDashboard({ currentUser, onNavigate }) {
         body_region: scan.body_region,
         annotated_image_path: scan.annotated_image_path || scan.raw_image_path,
         date: scan.scan_date,
-        location: "New York"
+        location: userLoc
       };
 
       const resp = await axios.post('/api/export-pdf', payload, {
@@ -106,19 +116,24 @@ export default function UserDashboard({ currentUser, onNavigate }) {
     }
   };
 
-  // Real patient telemetry counts with guaranteed real-data fallbacks
-  const totalCount = scans.length > 0 
-    ? scans.length 
-    : (analytics?.total_scans ?? 195);
+  // Telemetry counts strictly isolated:
+  // For Admin: uses institutional analytics if available, or scans
+  // For Regular User: calculated STRICTLY from the user's personal scans (0 if no scans)
+  const totalCount = isAdmin 
+    ? (analytics?.total_scans ?? scans.length)
+    : scans.length;
 
-  const abnormalCount = scans.length > 0
-    ? scans.filter(s => {
+  const abnormalCount = isAdmin
+    ? (analytics?.abnormal_scans ?? scans.filter(s => {
         const p = (s.prediction || '').toLowerCase();
         return p.includes('abnormal') || p.includes('pneumonia') || (p.includes('fracture') && !p.includes('no fracture'));
-      }).length
-    : (analytics?.abnormal_scans ?? 112);
+      }).length)
+    : scans.filter(s => {
+        const p = (s.prediction || '').toLowerCase();
+        return p.includes('abnormal') || p.includes('pneumonia') || (p.includes('fracture') && !p.includes('no fracture'));
+      }).length;
 
-  const normalCount = totalCount - abnormalCount;
+  const normalCount = Math.max(0, totalCount - abnormalCount);
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 text-slate-900 font-sans p-4 md:p-5 space-y-4">

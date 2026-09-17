@@ -29,33 +29,21 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [country, setCountry] = useState('United States');
+  const country = 'Pakistan';
   const [city, setCity] = useState('');
-  const [countrySearch, setCountrySearch] = useState('');
   const [citySearch, setCitySearch] = useState('');
-  const [countriesList, setCountriesList] = useState([
-    "United States", "United Kingdom", "Pakistan", "Canada", "Australia", 
-    "Germany", "France", "United Arab Emirates", "Saudi Arabia", "Japan", 
-    "Singapore", "India", "Ireland", "New Zealand", "Switzerland", "Netherlands",
-    "Sweden", "Norway", "South Africa", "Malaysia", "Qatar", "Kuwait", "Oman"
-  ]);
   const [citySuggestions, setCitySuggestions] = useState([]);
-  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const countryDropdownRef = useRef(null);
   const cityDropdownRef = useRef(null);
 
-  // Close dropdowns on click outside
+  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target)) {
-        setIsCountryDropdownOpen(false);
-      }
       if (cityDropdownRef.current && !cityDropdownRef.current.contains(event.target)) {
         setIsCityDropdownOpen(false);
       }
@@ -66,21 +54,12 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
     };
   }, []);
 
-  // Fetch supported countries on mount
-  useEffect(() => {
-    axios.get('/api/maps/countries')
-      .then(res => {
-        if (res.data?.countries) setCountriesList(res.data.countries);
-      })
-      .catch(() => {});
-  }, []);
-
-  // Search cities via Google Maps Places Autocomplete endpoint
+  // Search cities via Google Maps Places Autocomplete endpoint (restricted to Pakistan)
   useEffect(() => {
     const q = citySearch.trim();
     setIsLoadingPlaces(true);
     const timer = setTimeout(() => {
-      axios.get(`/api/maps/places-autocomplete?query=${encodeURIComponent(q)}&country=${encodeURIComponent(country)}`)
+      axios.get(`/api/maps/places-autocomplete?query=${encodeURIComponent(q)}&country=Pakistan`)
         .then(res => {
           if (res.data?.predictions) setCitySuggestions(res.data.predictions);
         })
@@ -89,11 +68,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
     }, 180);
 
     return () => clearTimeout(timer);
-  }, [citySearch, country]);
-
-  const filteredCountries = countriesList.filter(c =>
-    c.toLowerCase().includes(countrySearch.toLowerCase())
-  );
+  }, [citySearch]);
 
   const handleToggleSignUp = (signUpMode) => {
     setIsSignUp(signUpMode);
@@ -124,8 +99,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
 
     try {
       if (isSignUp) {
-        if (!country.trim() || !city.trim()) {
-          setErrorMessage('Mandatory: Please select your Country and City (powered by Google Maps).');
+        if (!city.trim()) {
+          setErrorMessage('Mandatory: Please select your City (Pakistan).');
           setIsLoading(false);
           return;
         }
@@ -298,76 +273,13 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
                     </div>
                   </div>
 
-                  {/* Mandatory Country Selection */}
-                  <div className="relative" ref={countryDropdownRef}>
+                  {/* Mandatory City Selection (Powered by Google Maps Platform) */}
+                  <div className="relative md:col-span-2" ref={cityDropdownRef}>
                     <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
-                      <span>Country <span className="text-rose-500">*</span></span>
-                      <span className="text-[9px] text-slate-400 font-normal">Mandatory</span>
-                    </label>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCountryDropdownOpen(!isCountryDropdownOpen);
-                          setIsCityDropdownOpen(false);
-                        }}
-                        className="w-full pl-8 pr-7 py-2 rounded-xl border border-slate-300 text-xs text-left flex items-center justify-between bg-white hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors cursor-pointer"
-                      >
-                        <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <span className="truncate text-slate-800 font-medium">{country || "Select Country"}</span>
-                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`} />
-                      </button>
-
-                      {isCountryDropdownOpen && (
-                        <div className="absolute left-0 right-0 z-40 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 max-h-48 overflow-y-auto">
-                          <div className="p-1.5 border-b border-slate-100 sticky top-0 bg-white z-10">
-                            <div className="relative">
-                              <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                              <input
-                                type="text"
-                                value={countrySearch}
-                                onChange={(e) => setCountrySearch(e.target.value)}
-                                placeholder="Search country..."
-                                autoFocus
-                                className="w-full pl-7 pr-2 py-1 text-[11px] rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500"
-                              />
-                            </div>
-                          </div>
-                          <div className="py-1">
-                            {filteredCountries.length > 0 ? (
-                              filteredCountries.map((c) => (
-                                <button
-                                  key={c}
-                                  type="button"
-                                  onClick={() => {
-                                    setCountry(c);
-                                    setCity('');
-                                    setCitySearch('');
-                                    setIsCountryDropdownOpen(false);
-                                    setCountrySearch('');
-                                  }}
-                                  className={`w-full px-3 py-1.5 text-left text-xs flex items-center justify-between hover:bg-blue-50 transition-colors cursor-pointer ${country === c ? "text-blue-600 font-semibold bg-blue-50/50" : "text-slate-700"}`}
-                                >
-                                  <span>{c}</span>
-                                  {country === c && <Check className="w-3.5 h-3.5 text-blue-600" />}
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-3 py-2 text-[11px] text-slate-400 text-center">No countries found</div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Mandatory City Selection (Powered by Google Maps) */}
-                  <div className="relative" ref={cityDropdownRef}>
-                    <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
-                      <span>City <span className="text-rose-500">*</span></span>
+                      <span>City (Pakistan) <span className="text-rose-500">*</span></span>
                       <span className="text-[9px] text-blue-600 font-semibold flex items-center gap-0.5">
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        Google Maps
+                        Google Maps Platform
                       </span>
                     </label>
                     <div className="relative">
@@ -382,9 +294,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
                         }}
                         onFocus={() => {
                           setIsCityDropdownOpen(true);
-                          setIsCountryDropdownOpen(false);
                         }}
-                        placeholder={`e.g. ${country === 'Pakistan' ? 'Lahore' : country === 'United Kingdom' ? 'London' : 'New York'}`}
+                        placeholder="e.g. Rawalpindi, Islamabad, Lahore, Karachi, Peshawar..."
                         required
                         className="w-full pl-8 pr-7 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       />
@@ -400,7 +311,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
                       {isCityDropdownOpen && (
                         <div className="absolute left-0 right-0 z-40 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 py-1 max-h-48 overflow-y-auto">
                           <div className="px-2.5 py-1 text-[10px] uppercase font-semibold tracking-wider text-slate-400 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                            <span>Locations in {country}</span>
+                            <span>Cities in Pakistan</span>
                             <span className="text-[9px] text-cyan-600 font-normal">Places API</span>
                           </div>
                           {citySuggestions.length > 0 ? (
@@ -418,7 +329,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
                                 <div className="truncate">
                                   <span className="font-medium text-slate-800 group-hover:text-blue-600">{item.city}</span>
                                   <span className="text-[10px] text-slate-400 ml-1.5 truncate">
-                                    {item.description !== item.city ? item.description : item.country}
+                                    {item.description !== item.city ? item.description : "Pakistan"}
                                   </span>
                                 </div>
                                 {city.toLowerCase() === item.city.toLowerCase() && (
@@ -428,7 +339,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
                             ))
                           ) : (
                             <div className="px-3 py-2 text-[11px] text-slate-400 text-center">
-                              {isLoadingPlaces ? "Querying Google Maps..." : "Type city name to search"}
+                              {isLoadingPlaces ? "Searching cities in Pakistan..." : "Type city name (e.g. Rawalpindi)"}
                             </div>
                           )}
                         </div>

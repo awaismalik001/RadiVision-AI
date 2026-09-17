@@ -40,8 +40,8 @@ export default function DiagnosticStudio({ currentUser }) {
   
   // User's location is automatically bound from user profile (city & country)
   const userLocation = currentUser?.city 
-    ? (currentUser?.country ? `${currentUser.city}, ${currentUser.country}` : currentUser.city)
-    : (currentUser?.location || "New York");
+    ? (currentUser?.country ? `${currentUser.city}, ${currentUser.country}` : `${currentUser.city}, Pakistan`)
+    : (currentUser?.location || "Rawalpindi, Pakistan");
 
   // File & Prediction State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -106,7 +106,9 @@ export default function DiagnosticStudio({ currentUser }) {
       formData.append("patient_gender", patientGender);
       formData.append("patient_id", patientId);
       formData.append("location", userLocation);
-      formData.append("user_id", currentUser?.user_id || 2);
+      if (currentUser?.user_id) {
+        formData.append("user_id", currentUser.user_id);
+      }
 
       const resp = await axios.post('/api/predict', formData, {
         headers: { "Content-Type": "multipart/form-data" }

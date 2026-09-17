@@ -56,9 +56,9 @@ class DatabaseManager:
             if "phone" not in u_cols:
                 cursor.execute("ALTER TABLE users ADD COLUMN phone TEXT;")
             if "country" not in u_cols:
-                cursor.execute("ALTER TABLE users ADD COLUMN country TEXT DEFAULT 'United States';")
+                cursor.execute("ALTER TABLE users ADD COLUMN country TEXT DEFAULT 'Pakistan';")
             if "city" not in u_cols:
-                cursor.execute("ALTER TABLE users ADD COLUMN city TEXT DEFAULT 'New York';")
+                cursor.execute("ALTER TABLE users ADD COLUMN city TEXT DEFAULT 'Rawalpindi';")
 
             # 2. Patients Table
             cursor.execute("""
@@ -139,13 +139,13 @@ class DatabaseManager:
                 conn.commit()
 
     # ----------------- User Management -----------------
-    def create_user(self, full_name: str, username: str, email: str, password_hash: str, role: str = 'User', phone: str = "", country: str = "United States", city: str = "New York") -> int:
+    def create_user(self, full_name: str, username: str, email: str, password_hash: str, role: str = 'User', phone: str = "", country: str = "Pakistan", city: str = "Rawalpindi") -> int:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO users (full_name, username, email, password_hash, role, phone, country, city)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-            """, (full_name.strip(), username.strip(), email.strip(), password_hash, role, phone.strip() if phone else "", country.strip() if country else "United States", city.strip() if city else "New York"))
+            """, (full_name.strip(), username.strip(), email.strip(), password_hash, role, phone.strip() if phone else "", country.strip() if country else "Pakistan", city.strip() if city else "Rawalpindi"))
             conn.commit()
             return cursor.lastrowid
 

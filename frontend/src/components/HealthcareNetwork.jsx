@@ -40,43 +40,89 @@ export default function HealthcareNetwork() {
       modality: "Chest",
       rating: "4.7 ★"
     },
-    // New York
+    // Rawalpindi
     {
-      city: "New York",
-      hospital: "Hospital for Special Surgery (HSS)",
-      specialty: "Orthopedic Trauma Service",
-      doctor: "Dr. David L. Helfet, MD",
-      phone: "+1 212-606-1000",
-      email: "orthotrauma@hss.edu",
-      address: "535 E 70th St, New York, NY 10021",
+      city: "Rawalpindi",
+      hospital: "Holy Family Hospital",
+      specialty: "Department of Orthopedic Surgery & Trauma",
+      doctor: "Prof. Dr. Asad Noor, FCPS",
+      phone: "+92 51 9290321",
+      email: "referrals@hfh.gov.pk",
+      address: "Murree Rd, Satellite Town, Rawalpindi",
       modality: "Bone",
-      rating: "5.0 ★ Google Maps"
+      rating: "4.9 ★"
     },
     {
-      city: "New York",
-      hospital: "Lenox Hill Hospital (Northwell Health)",
-      specialty: "Pulmonary & Critical Care Medicine",
-      doctor: "Dr. Michael Schwartz, MD",
-      phone: "+1 212-434-2000",
-      email: "referrals@northwell.edu",
-      address: "100 E 77th St, New York, NY 10075",
+      city: "Rawalpindi",
+      hospital: "Rawalpindi Institute of Cardiology & Chest Diseases (RIC)",
+      specialty: "Pulmonology & Acute Chest Care",
+      doctor: "Prof. Dr. Shazli Manzoor, FCPS",
+      phone: "+92 51 9281200",
+      email: "chest@ric.punjab.gov.pk",
+      address: "Rawal Rd, Rawalpindi",
       modality: "Chest",
-      rating: "4.9 ★ Google Maps"
+      rating: "4.9 ★"
     },
     {
-      city: "New York",
-      hospital: "Mount Sinai Hospital - Respiratory Institute",
-      specialty: "Comprehensive Thoracic Imaging & Care",
-      doctor: "Dr. Charles A. Powell, MD",
-      phone: "+1 212-241-6500",
-      email: "pulmonology@mountsinai.org",
-      address: "1468 Madison Ave, New York, NY 10029",
+      city: "Rawalpindi",
+      hospital: "Combined Military Hospital (CMH) Rawalpindi",
+      specialty: "Institute of Orthopedics & Polytrauma",
+      doctor: "Brig. Dr. Sohail Amin, FRCS",
+      phone: "+92 51 5565111",
+      email: "trauma@cmh.org.pk",
+      address: "Abid Majeed Rd, Cantt, Rawalpindi",
+      modality: "Bone",
+      rating: "4.9 ★"
+    },
+    // Lahore
+    {
+      city: "Lahore",
+      hospital: "Ghurki Trust Teaching Hospital",
+      specialty: "Spine & Orthopedic Trauma Center",
+      doctor: "Prof. Dr. Amer Aziz, FRCS",
+      phone: "+92 42 36581401",
+      email: "ortho@ghurkitrust.org.pk",
+      address: "Jallo Mor, Lahore",
+      modality: "Bone",
+      rating: "4.9 ★"
+    },
+    {
+      city: "Lahore",
+      hospital: "Gulab Devi Chest Hospital",
+      specialty: "Institute of Pulmonary & Respiratory Medicine",
+      doctor: "Prof. Dr. Kamran Chatha, FCPS",
+      phone: "+92 42 35841081",
+      email: "referrals@gulabdevi.org",
+      address: "Ferozepur Rd, Lahore",
       modality: "Chest",
-      rating: "4.8 ★ Google Maps"
+      rating: "4.9 ★"
+    },
+    // Karachi
+    {
+      city: "Karachi",
+      hospital: "Aga Khan University Hospital (AKUH)",
+      specialty: "Orthopedic Trauma & Musculoskeletal Care",
+      doctor: "Prof. Dr. Masood Umer, FCPS",
+      phone: "+92 21 111 911 911",
+      email: "referrals@aku.edu",
+      address: "Stadium Rd, Karachi",
+      modality: "Bone",
+      rating: "5.0 ★"
+    },
+    {
+      city: "Karachi",
+      hospital: "Ojha Institute of Chest Diseases (Dow University)",
+      specialty: "Pulmonary Medicine & Critical Care",
+      doctor: "Prof. Dr. Javaid Khan, FRCP",
+      phone: "+92 21 99232660",
+      email: "chest@duhs.edu.pk",
+      address: "SUPARCO Rd, Gulzar-e-Hijri, Karachi",
+      modality: "Chest",
+      rating: "4.9 ★"
     }
   ];
 
-  const cities = ["ALL", "New York", "Islamabad"];
+  const cities = ["ALL", "Rawalpindi", "Islamabad", "Lahore", "Karachi"];
 
   const filtered = directory.filter(d => {
     const matchesCity = selectedCity === "ALL" || d.city.toLowerCase() === selectedCity.toLowerCase();

@@ -23,9 +23,15 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
     setLoading(true);
     try {
       const isInstitutionalAdmin = currentUser?.role === 'Admin' && !isMyHistory;
-      const url = isInstitutionalAdmin
-        ? '/api/history'
-        : `/api/history?user_id=${currentUser?.user_id || 2}`;
+      let url = '/api/history';
+      if (!isInstitutionalAdmin) {
+        if (!currentUser?.user_id) {
+          setScans([]);
+          setLoading(false);
+          return;
+        }
+        url = `/api/history?user_id=${currentUser.user_id}`;
+      }
       const resp = await axios.get(url);
       setScans(resp.data.scans || []);
     } catch (err) {
@@ -60,9 +66,13 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
   const handleDownloadPdf = async (scan) => {
     setDownloadingId(scan.scan_id);
     try {
+      const userLoc = currentUser?.city 
+        ? `${currentUser.city}, ${currentUser.country || 'Pakistan'}`
+        : (currentUser?.location || 'Rawalpindi, Pakistan');
+
       const payload = {
         patient_id: scan.patient_national_id || `RV-${scan.scan_id}`,
-        patient_name: scan.patient_name || "Patient Record",
+        patient_name: scan.patient_name || currentUser?.full_name || "Patient Record",
         patient_age: scan.patient_age || 35,
         patient_gender: scan.patient_gender || "Female",
         scan_type: scan.scan_type,
@@ -71,7 +81,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
         body_region: scan.body_region,
         annotated_image_path: scan.annotated_image_path || scan.raw_image_path,
         date: scan.scan_date,
-        location: "New York"
+        location: userLoc
       };
 
       const resp = await axios.post('/api/export-pdf', payload, {

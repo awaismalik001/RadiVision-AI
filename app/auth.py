@@ -187,8 +187,8 @@ def authenticate_user(username: str, password: str, client_ip: str = "127.0.0.1"
         "email": user["email"],
         "role": user["role"],
         "phone": user.get("phone", ""),
-        "country": user.get("country") or "United States",
-        "city": user.get("city") or "New York",
+        "country": user.get("country") or "Pakistan",
+        "city": user.get("city") or "Rawalpindi",
         "is_active": user["is_active"]
     }
     SessionManager.set_user(safe_user)
