@@ -35,9 +35,12 @@ html {
   text-rendering: optimizeLegibility;
 }
 
+html, body, #root {
+  background-color: transparent !important;
+}
+
 body {
   font-size: 13px;
-  background-color: #f8fafc;
   color: #0f172a;
   margin: 0;
   padding: 0;

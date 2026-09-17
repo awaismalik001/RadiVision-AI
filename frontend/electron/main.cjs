@@ -18,8 +18,11 @@ function createWindow() {
     height: 440,
     center: true,
     resizable: false,
+    frame: false,
+    transparent: true,
+    hasShadow: false,
+    backgroundColor: '#00000000',
     title: "RadiVision AI — Professional Medical X-Ray Diagnostic Suite",
-    backgroundColor: '#070B14',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -57,7 +60,26 @@ function createWindow() {
   ipcMain.on('window:to-auth', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.setResizable(true);
-      mainWindow.setSize(400, 600, true);
+      mainWindow.setSize(390, 460, true);
+      mainWindow.setResizable(false);
+      mainWindow.center();
+    }
+  });
+
+  // Option 3: Adaptive Height Resizing for Sign Up vs Sign In
+  ipcMain.on('window:auth-signup', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setResizable(true);
+      mainWindow.setSize(440, 620, true);
+      mainWindow.setResizable(false);
+      mainWindow.center();
+    }
+  });
+
+  ipcMain.on('window:auth-signin', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setResizable(true);
+      mainWindow.setSize(390, 460, true);
       mainWindow.setResizable(false);
       mainWindow.center();
     }
@@ -74,10 +96,33 @@ function createWindow() {
   ipcMain.on('window:shrink-to-auth', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.unmaximize();
-      mainWindow.setMinimumSize(320, 480);
-      mainWindow.setSize(400, 600, true);
+      mainWindow.setMinimumSize(360, 420);
+      mainWindow.setSize(390, 460, true);
       mainWindow.setResizable(false);
       mainWindow.center();
+    }
+  });
+
+  // Native window control actions (Minimize, Maximize/Restore, Close)
+  ipcMain.on('window:minimize', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.minimize();
+    }
+  });
+
+  ipcMain.on('window:maximize-toggle', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+
+  ipcMain.on('window:close', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.close();
     }
   });
 

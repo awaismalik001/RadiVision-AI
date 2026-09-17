@@ -54,7 +54,8 @@ export default function SplashScreen({ onComplete }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
-      className="w-full h-full min-h-screen flex flex-col justify-between bg-slate-950 text-slate-100 select-none overflow-hidden"
+      style={{ WebkitAppRegion: 'drag' }}
+      className="w-full h-full min-h-screen flex flex-col justify-between bg-slate-950 text-slate-100 select-none overflow-hidden cursor-default rounded-2xl border border-slate-800/80 shadow-2xl"
     >
       {/* Pure RadiVision AI Workflow Image with Clarity Animation */}
       <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-slate-950">
@@ -75,7 +76,7 @@ export default function SplashScreen({ onComplete }) {
             duration: 1.4,
             ease: [0.16, 1, 0.3, 1]
           }}
-          className="w-full h-full object-cover select-none"
+          className="w-full h-full object-cover select-none pointer-events-none"
         />
 
         {/* Subtle Light Sweep Effect */}
@@ -89,6 +90,7 @@ export default function SplashScreen({ onComplete }) {
         {/* Top-right quick skip */}
         <button
           onClick={handleFinish}
+          style={{ WebkitAppRegion: 'no-drag' }}
           className="absolute top-3 right-3 text-[10px] font-mono text-slate-400 hover:text-cyan-300 bg-slate-900/80 hover:bg-slate-900 border border-slate-700/60 px-2 py-1 rounded-md transition-all cursor-pointer backdrop-blur-sm"
         >
           Skip &rarr;

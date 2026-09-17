@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Stethoscope } from 'lucide-react';
+import { Stethoscope, Minus, Square, X } from 'lucide-react';
 import SplashScreen from './components/SplashScreen';
 import Sidebar from './components/Sidebar';
 import UserDashboard from './components/UserDashboard';
@@ -65,7 +65,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-slate-50 text-slate-900 font-sans overflow-hidden flex">
+    <div className={`relative min-h-screen w-full font-sans overflow-hidden flex ${currentUser ? 'bg-slate-50 text-slate-900' : 'bg-transparent'}`}>
       <AnimatePresence mode="wait">
         {showSplash ? (
           <SplashScreen key="splash" onComplete={() => setShowSplash(false)} />
@@ -77,7 +77,7 @@ export default function App() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="w-full min-h-screen flex items-center justify-center bg-slate-950 p-2 select-none overflow-hidden"
+            className="w-full min-h-screen flex items-center justify-center bg-transparent select-none overflow-hidden p-2"
           >
             {/* Centered Desktop Auth Card (Sign In & Sign Up Views) */}
             <AuthModal
@@ -93,7 +93,7 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
-            className="flex w-full h-screen overflow-hidden"
+            className="flex w-full h-screen overflow-hidden bg-slate-50"
           >
             {/* Left Desktop Sidebar (#1982BF) */}
             <Sidebar
@@ -107,6 +107,35 @@ export default function App() {
 
             {/* Main Stage Viewport (Clean Hospital White Aesthetic) */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
+              {/* Sleek Frameless Window Controls for Desktop Workstation */}
+              {window.electronAPI?.isElectron && (
+                <div 
+                  className="absolute top-0 right-0 z-50 flex items-center h-8 bg-slate-200/50 hover:bg-slate-200/90 backdrop-blur-xs border-b border-l border-slate-300/60 rounded-bl-md overflow-hidden select-none transition-colors"
+                  style={{ WebkitAppRegion: 'no-drag' }}
+                >
+                  <button
+                    onClick={() => window.electronAPI.minimize?.()}
+                    className="h-8 px-3 text-slate-600 hover:text-slate-950 hover:bg-slate-300/80 transition-colors flex items-center justify-center cursor-pointer"
+                    title="Minimize"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => window.electronAPI.maximizeToggle?.()}
+                    className="h-8 px-3 text-slate-600 hover:text-slate-950 hover:bg-slate-300/80 transition-colors flex items-center justify-center cursor-pointer"
+                    title="Maximize / Restore"
+                  >
+                    <Square className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => window.electronAPI.close?.()}
+                    className="h-8 px-3.5 text-slate-600 hover:text-white hover:bg-rose-600 transition-colors flex items-center justify-center cursor-pointer"
+                    title="Close Application"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
               {activeTab === 'dashboard' && (
                 <UserDashboard 
                   currentUser={currentUser} 

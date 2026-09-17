@@ -11,7 +11,8 @@ import {
   Stethoscope, 
   Eye, 
   EyeOff, 
-  ArrowRight 
+  ArrowRight,
+  X
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -25,6 +26,18 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const handleToggleSignUp = (signUpMode) => {
+    setIsSignUp(signUpMode);
+    setErrorMessage('');
+    if (isStandalone && window.electronAPI) {
+      if (signUpMode) {
+        window.electronAPI.authSignUp?.();
+      } else {
+        window.electronAPI.authSignIn?.();
+      }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -81,7 +94,9 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
     }
   };
 
-  const containerWidth = isSignUp ? "max-w-xl" : "max-w-md";
+  const containerWidth = isStandalone 
+    ? (isSignUp ? "max-w-[410px]" : "max-w-[360px]") 
+    : (isSignUp ? "max-w-xl" : "max-w-md");
 
   return (
     <div className={isStandalone ? `relative z-10 w-full ${containerWidth} mx-auto transition-all duration-200` : `fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1727]/80 backdrop-blur-md`}>
@@ -89,10 +104,28 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className={`w-full ${containerWidth} bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col transition-all duration-200`}
+        className={`w-full ${containerWidth} bg-white rounded-3xl ${isStandalone ? 'shadow-[0_25px_60px_-15px_rgba(0,0,0,0.65)] border border-slate-200/90' : 'shadow-2xl border border-slate-200'} overflow-hidden max-h-[96vh] flex flex-col transition-all duration-200`}
       >
-        {/* Top Branding Banner (Compact) */}
-        <div className="bg-[#1982bf] py-3.5 px-6 text-white text-center relative shrink-0">
+        {/* Top Branding Banner (Compact & Draggable) */}
+        <div 
+          style={{ WebkitAppRegion: 'drag' }}
+          className="bg-[#1982bf] py-3.5 px-6 text-white text-center relative shrink-0 select-none cursor-default"
+        >
+          {isStandalone && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.electronAPI?.close) {
+                  window.electronAPI.close();
+                }
+              }}
+              style={{ WebkitAppRegion: 'no-drag' }}
+              className="absolute top-2.5 right-2.5 text-white/70 hover:text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors cursor-pointer"
+              title="Close Application"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
           <div className="inline-flex w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 items-center justify-center shadow-md ring-1 ring-cyan-400/40 mb-1">
             <Stethoscope className="w-4 h-4 text-white" />
           </div>
@@ -302,7 +335,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
               <span>
                 Already have an account?{' '}
                 <button
-                  onClick={() => { setIsSignUp(false); setErrorMessage(''); }}
+                  type="button"
+                  onClick={() => handleToggleSignUp(false)}
                   className="font-semibold text-[#1982bf] hover:underline cursor-pointer"
                 >
                   Sign In
@@ -312,7 +346,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
               <span>
                 Don't have an account?{' '}
                 <button
-                  onClick={() => { setIsSignUp(true); setErrorMessage(''); }}
+                  type="button"
+                  onClick={() => handleToggleSignUp(true)}
                   className="font-semibold text-[#1982bf] hover:underline cursor-pointer"
                 >
                   Register Account
