@@ -15,7 +15,8 @@ import {
   Lock,
   Calendar,
   Layers,
-  FileText
+  FileText,
+  Clock
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -28,6 +29,24 @@ export default function AdminDashboard({ currentUser }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
+
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return 'Recent';
+    const normalized = typeof dateStr === 'string' && dateStr.includes(' ') && !dateStr.includes('T')
+      ? dateStr.replace(' ', 'T')
+      : dateStr;
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  };
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -284,7 +303,7 @@ export default function AdminDashboard({ currentUser }) {
                     <th className="py-2.5 px-3">Modality</th>
                     <th className="py-2.5 px-3">Vision Transformer Diagnosis</th>
                     <th className="py-2.5 px-3">Confidence</th>
-                    <th className="py-2.5 px-3">Date & Time</th>
+                    <th className="py-2.5 px-3">Date & Timestamp</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -333,8 +352,11 @@ export default function AdminDashboard({ currentUser }) {
                           <td className="py-2.5 px-3 font-mono font-semibold text-[13px] text-slate-700">
                             {conf}%
                           </td>
-                          <td className="py-2.5 px-3 text-slate-500 text-[12px] font-mono">
-                            {s.scan_date ? new Date(s.scan_date).toLocaleString() : 'Recent'}
+                          <td className="py-2.5 px-3 text-slate-600 text-[12px] font-mono whitespace-nowrap">
+                            <div className="flex items-center space-x-1.5">
+                              <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span>{formatDateTime(s.scan_date)}</span>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -354,7 +376,7 @@ export default function AdminDashboard({ currentUser }) {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
                     <th className="py-2.5 px-3">Log ID</th>
-                    <th className="py-2.5 px-3">Timestamp</th>
+                    <th className="py-2.5 px-3">Date & Timestamp</th>
                     <th className="py-2.5 px-3">User</th>
                     <th className="py-2.5 px-3">Security Action</th>
                     <th className="py-2.5 px-3">Details</th>
@@ -376,8 +398,11 @@ export default function AdminDashboard({ currentUser }) {
                           <td className="py-2.5 px-3 font-mono text-[11px] text-slate-400">
                             #{l.log_id}
                           </td>
-                          <td className="py-2.5 px-3 text-[12px] font-mono text-slate-500">
-                            {l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A'}
+                          <td className="py-2.5 px-3 text-[12px] font-mono text-slate-600 whitespace-nowrap">
+                            <div className="flex items-center space-x-1.5">
+                              <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span>{formatDateTime(l.timestamp)}</span>
+                            </div>
                           </td>
                           <td className="py-2.5 px-3 font-semibold text-[13px] text-slate-900">
                             {l.username || 'SYSTEM'}

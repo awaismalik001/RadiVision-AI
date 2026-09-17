@@ -105,7 +105,17 @@ def generate_pdf_report(scan_details: Dict[str, Any]) -> str:
     p_name = scan_details.get("patient_name", "Sarah Chen")
     p_age = str(scan_details.get("patient_age", "34"))
     p_id = str(scan_details.get("patient_id", "RV-987654"))
-    date_str = scan_details.get("date", datetime.now().strftime("%d %b %Y"))
+    raw_date = scan_details.get("date") or scan_details.get("scan_date")
+    if raw_date:
+        try:
+            clean_date = str(raw_date).replace('T', ' ').split('.')[0]
+            dt = datetime.strptime(clean_date, "%Y-%m-%d %H:%M:%S")
+            date_str = dt.strftime("%d %b %Y, %I:%M:%S %p")
+        except Exception:
+            date_str = str(raw_date)
+    else:
+        date_str = datetime.now().strftime("%d %b %Y, %I:%M:%S %p")
+
     modality = scan_details.get("scan_type", "Bone Radiograph (Wrist)")
     if "region" in scan_details and scan_details["region"]:
         modality = f"{modality} ({scan_details['region']})"
@@ -121,7 +131,7 @@ def generate_pdf_report(scan_details: Dict[str, Any]) -> str:
         ],
         [
             Paragraph("<b>Patient ID:</b>", cell_bold), Paragraph(p_id, cell_style),
-            Paragraph("<b>Date:</b>", cell_bold), Paragraph(date_str, cell_style)
+            Paragraph("<b>Date & Time:</b>", cell_bold), Paragraph(date_str, cell_style)
         ],
         [
             Paragraph("<b>Modality:</b>", cell_bold), Paragraph(modality, cell_style),

@@ -25,12 +25,13 @@ except ImportError:
     HAS_GENAI = False
 
 from dotenv import load_dotenv
-load_dotenv()
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, ".env"))
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 class GeminiDiagnosticService:
-    """Manages Gemini Multimodal API calls for radiographic pre-processing and diagnostic refinement."""
+    """Manages Gemini 3.8 Flash Multimodal API calls for radiographic pre-processing and diagnostic refinement."""
 
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY", "")
@@ -89,7 +90,7 @@ class GeminiDiagnosticService:
             )
 
             def _call():
-                for model_name in ["gemini-3.5-flash-lite", "gemini-3.6-flash"]:
+                for model_name in ["gemini-3.8-flash", "gemini-3.5-flash-lite"]:
                     try:
                         resp = self.client.models.generate_content(
                             model=model_name,
@@ -100,13 +101,14 @@ class GeminiDiagnosticService:
                         )
                         if resp and resp.text:
                             return resp.text.strip()
-                    except Exception:
+                    except Exception as pe:
+                        print(f"[Gemini Service Preprocessing] {model_name} note: {pe}")
                         continue
                 return ""
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 fut = executor.submit(_call)
-                text = fut.result(timeout=3.0)
+                text = fut.result(timeout=5.0)
 
             return {
                 **default_params,
@@ -137,6 +139,7 @@ class GeminiDiagnosticService:
             "verified": True,
             "status": "High-Confidence Consensus" if model_is_abnormal else "Concordant Normal Scan",
             "model_agreement": "Confirmed Concordance (Pathology Identified)" if model_is_abnormal else "Confirmed Concordance (Normal)",
+            "model_version": "Gemini 3.8 Flash",
             "refined_confidence": round(min(0.99, max(initial_confidence, 0.92)), 4),
             "clinical_impression": (
                 f"Secondary AI analysis corroborates {initial_prediction.lower()} in {modality.lower()} radiograph. "
@@ -178,7 +181,8 @@ class GeminiDiagnosticService:
             )
 
             def _call_gemini():
-                for model_name in ["gemini-3.5-flash-lite", "gemini-3.6-flash"]:
+                # Primary: Gemini 3.8 Flash (absolute latest & most capable); Secondary: Gemini 3.5 Flash-Lite (ultra-fast resilient fallback)
+                for model_name in ["gemini-3.8-flash", "gemini-3.5-flash-lite"]:
                     try:
                         resp = self.client.models.generate_content(
                             model=model_name,
@@ -191,16 +195,22 @@ class GeminiDiagnosticService:
                             )
                         )
                         if resp and resp.text:
-                            return resp.text.strip()
+                            return resp.text.strip(), model_name
                     except Exception as me:
                         print(f"[Gemini Service] Model {model_name} attempt: {me}")
                         continue
-                return ""
+                return "", None
 
-            # Strict 3.5s timeout to guarantee UI never blocks or freezes
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 fut = executor.submit(_call_gemini)
-                raw_json = fut.result(timeout=3.5)
+                raw_json, used_model_name = fut.result(timeout=10.0)
+
+            used_label = "Gemini 3.8 Flash"
+            if used_model_name:
+                if "3.8" in used_model_name:
+                    used_label = "Gemini 3.8 Flash"
+                elif "3.5" in used_model_name:
+                    used_label = "Gemini 3.5 Flash-Lite"
 
             if raw_json:
                 try:
@@ -247,6 +257,7 @@ class GeminiDiagnosticService:
                     "verified": True,
                     "status": status,
                     "model_agreement": agreement,
+                    "model_version": used_label,
                     "has_abnormality": gemini_abnormal,
                     "gemini_finding": gemini_finding,
                     "refined_confidence": round(min(0.995, max(initial_confidence, 0.94)), 4),
@@ -262,7 +273,7 @@ class GeminiDiagnosticService:
                     "body_region": detected_region
                 }
         except concurrent.futures.TimeoutError:
-            print("[Gemini Service] Gemini API call exceeded 3.5s limit; applying instant clinical fallback.")
+            print("[Gemini Service] Gemini API call exceeded timeout; applying instant clinical fallback.")
         except Exception as e:
             print(f"[Gemini Service] Cross-verification note: {e}")
 

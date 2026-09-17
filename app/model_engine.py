@@ -266,7 +266,7 @@ class ModelEngine:
                     "findings": findings,
                     "vit_details": vit_res,
                     "gemini_refinement": gemini_ref,
-                    "architecture": "Vision Transformer (ViT-B/16) + Gemini AI Cross-Verification",
+                    "architecture": "Vision Transformer (ViT-B/16) + Gemini 3.8 Flash Multimodal AI Cross-Verification",
                     "is_simulated": False
                 }
             except Exception as e:
@@ -343,7 +343,7 @@ class ModelEngine:
             "findings": findings,
             "vit_details": vit_res,
             "gemini_refinement": gemini_ref,
-            "architecture": "Vision Transformer (ViT-B/16) + Gemini AI Cross-Verification",
+            "architecture": "Vision Transformer (ViT-B/16) + Gemini 3.8 Flash Multimodal AI Cross-Verification",
             "is_simulated": True
         }
 
@@ -440,7 +440,7 @@ class ModelEngine:
                     "findings": findings,
                     "vit_details": vit_res,
                     "gemini_refinement": gemini_ref,
-                    "architecture": "Vision Transformer (ViT-B/16) + Gemini AI Cross-Verification",
+                    "architecture": "Vision Transformer (ViT-B/16) + Gemini 3.8 Flash Multimodal AI Cross-Verification",
                     "is_simulated": False
                 }
             except Exception as e:

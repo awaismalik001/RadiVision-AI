@@ -54,6 +54,24 @@ export default function UserDashboard({ currentUser, onNavigate }) {
     fetchRecentScans();
   }, [currentUser]);
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return 'Recent';
+    const normalized = typeof dateStr === 'string' && dateStr.includes(' ') && !dateStr.includes('T')
+      ? dateStr.replace(' ', 'T')
+      : dateStr;
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  };
+
   const handleDownloadPdf = async (scan) => {
     setDownloadingId(scan.scan_id);
     try {
@@ -67,6 +85,7 @@ export default function UserDashboard({ currentUser, onNavigate }) {
         confidence: scan.confidence,
         body_region: scan.body_region,
         annotated_image_path: scan.annotated_image_path || scan.raw_image_path,
+        date: scan.scan_date,
         location: "New York"
       };
 
@@ -270,13 +289,14 @@ export default function UserDashboard({ currentUser, onNavigate }) {
                   <th className="py-2.5 px-3">Modality</th>
                   <th className="py-2.5 px-3">Primary Finding</th>
                   <th className="py-2.5 px-3">Confidence</th>
+                  <th className="py-2.5 px-3">Date & Timestamp</th>
                   <th className="py-2.5 px-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {scans.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="py-8 text-center text-slate-400 text-xs">
+                    <td colSpan="6" className="py-8 text-center text-slate-400 text-xs">
                       {loading ? "Loading examination records..." : "No recent scans found. Launch Diagnostic Studio to analyze a radiograph."}
                     </td>
                   </tr>
@@ -315,6 +335,12 @@ export default function UserDashboard({ currentUser, onNavigate }) {
                         </td>
                         <td className="py-2.5 px-3 font-mono font-semibold text-[13px] text-slate-700">
                           {conf}%
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600 font-mono text-[12px] whitespace-nowrap">
+                          <div className="flex items-center space-x-1.5">
+                            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{formatDateTime(scan.scan_date)}</span>
+                          </div>
                         </td>
                         <td className="py-2.5 px-3 text-right">
                           <button

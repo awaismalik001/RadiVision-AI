@@ -51,6 +51,24 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
     fetchHistory();
   }, [currentUser, isMyHistory]);
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return 'Recent';
+    const normalized = typeof dateStr === 'string' && dateStr.includes(' ') && !dateStr.includes('T')
+      ? dateStr.replace(' ', 'T')
+      : dateStr;
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  };
+
   const handleDownloadPdf = async (scan) => {
     setDownloadingId(scan.scan_id);
     try {
@@ -64,6 +82,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
         confidence: scan.confidence,
         body_region: scan.body_region,
         annotated_image_path: scan.annotated_image_path || scan.raw_image_path,
+        date: scan.scan_date,
         location: "New York"
       };
 
@@ -180,7 +199,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                   <th className="py-2.5 px-3">Modality</th>
                   <th className="py-2.5 px-3">ViT Diagnostic Finding</th>
                   <th className="py-2.5 px-3">Confidence</th>
-                  <th className="py-2.5 px-3">Scan Date</th>
+                  <th className="py-2.5 px-3">Date & Timestamp</th>
                   <th className="py-2.5 px-3 text-right">Action</th>
                 </tr>
               </thead>
@@ -253,8 +272,11 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                           {conf}%
                         </td>
 
-                        <td className="py-2.5 px-3 text-slate-500 text-[12px] font-mono">
-                          {scan.scan_date ? new Date(scan.scan_date).toLocaleDateString() : 'Recent'}
+                        <td className="py-2.5 px-3 text-slate-600 text-[12px] font-mono whitespace-nowrap">
+                          <div className="flex items-center space-x-1.5">
+                            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{formatDateTime(scan.scan_date)}</span>
+                          </div>
                         </td>
 
                         <td className="py-2.5 px-3 text-right">
@@ -312,9 +334,15 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
             </div>
             <div className="p-4 bg-white flex items-center justify-between border-t border-slate-200 text-xs">
               <div>
-                <span className="font-semibold text-slate-700">Diagnosis: </span>
-                <span className="font-bold text-[#1982bf]">{selectedPreviewScan.prediction}</span>
-                <span className="text-slate-400 ml-2 font-mono">({(selectedPreviewScan.confidence * 100).toFixed(1)}% confidence)</span>
+                <div>
+                  <span className="font-semibold text-slate-700">Diagnosis: </span>
+                  <span className="font-bold text-[#1982bf]">{selectedPreviewScan.prediction}</span>
+                  <span className="text-slate-400 ml-2 font-mono">({(selectedPreviewScan.confidence * 100).toFixed(1)}% confidence)</span>
+                </div>
+                <div className="text-slate-500 font-mono text-[11px] flex items-center space-x-1 mt-1">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  <span>Acquired & Analyzed: {formatDateTime(selectedPreviewScan.scan_date)}</span>
+                </div>
               </div>
               <button
                 onClick={() => handleDownloadPdf(selectedPreviewScan)}

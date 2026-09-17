@@ -69,7 +69,7 @@ def generate_excel_export(output_filename: Optional[str] = None) -> str:
 
     headers = [
         "Scan ID", "National ID / MRN", "Patient Name", "Age", "Gender",
-        "Modality", "Body Region", "Diagnostic Impression", "Confidence", "Scan Date"
+        "Modality", "Body Region", "Diagnostic Impression", "Confidence", "Scan Date & Timestamp"
     ]
 
     for col_num, header in enumerate(headers, 1):

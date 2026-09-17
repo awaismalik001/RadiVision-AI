@@ -336,8 +336,8 @@ async def predict_scan(
             "facilities": facilities,
             "vit_details": result.get("vit_details"),
             "gemini_refinement": result.get("gemini_refinement"),
-            "architecture": result.get("architecture", "Vision Transformer (ViT-B/16) + Gemini AI Cross-Verification"),
-            "timestamp": datetime.now().strftime("%d %b %Y, %I:%M %p")
+            "architecture": result.get("architecture", "Vision Transformer (ViT-B/16) + Gemini 3.8 Flash Multimodal AI Cross-Verification"),
+            "timestamp": datetime.now().strftime("%d %b %Y, %I:%M:%S %p")
         }
     except Exception as e:
         import traceback

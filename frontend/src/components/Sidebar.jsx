@@ -132,7 +132,7 @@ export default function Sidebar({
               </div>
               <div className="flex justify-between">
                 <span className="text-white/75">AI Validation:</span>
-                <span className="font-mono text-cyan-200">Gemini 2.5</span>
+                <span className="font-mono text-cyan-200">Gemini 3.8 Flash</span>
               </div>
             </div>
           </div>
