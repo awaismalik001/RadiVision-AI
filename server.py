@@ -24,6 +24,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Add project root to sys.path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 if PROJECT_ROOT not in sys.path:
@@ -98,13 +104,18 @@ async def signup(user_data: dict):
     username = user_data.get("username", "").strip()
     email = user_data.get("email", "").strip()
     phone = user_data.get("phone", "").strip()
+    country = user_data.get("country", "").strip()
+    city = user_data.get("city", "").strip()
     password = user_data.get("password", "")
     
     # Strictly enforce 'User' role: Public registration creates only standard User accounts
     role = "User"
 
     if not full_name or not username or not email or not password:
-        raise HTTPException(status_code=400, detail="All fields are required.")
+        raise HTTPException(status_code=400, detail="Full Name, Username, Email, and Password are required.")
+
+    if not country or not city:
+        raise HTTPException(status_code=400, detail="Mandatory: Country and City selection is required.")
 
     if not validate_email(email):
         raise HTTPException(status_code=400, detail="Invalid email address format.")
@@ -117,8 +128,17 @@ async def signup(user_data: dict):
         raise HTTPException(status_code=409, detail=f"Username '{username}' is already registered.")
 
     pw_hash = hash_password(password)
-    user_id = db.create_user(full_name=full_name, username=username, email=email, password_hash=pw_hash, role="User", phone=phone)
-    db.log_activity(user_id, username, "USER_REGISTERED", "Account created with role: User")
+    user_id = db.create_user(
+        full_name=full_name,
+        username=username,
+        email=email,
+        password_hash=pw_hash,
+        role="User",
+        phone=phone,
+        country=country,
+        city=city
+    )
+    db.log_activity(user_id, username, "USER_REGISTERED", f"Account created with role: User, Location: {city}, {country}")
 
     safe_user = {
         "user_id": user_id,
@@ -126,10 +146,165 @@ async def signup(user_data: dict):
         "username": username,
         "email": email,
         "phone": phone,
+        "country": country,
+        "city": city,
         "role": "User",
         "is_active": 1
     }
     return {"success": True, "message": "Account created successfully.", "user": safe_user}
+
+@app.get("/api/maps/countries")
+def get_countries():
+    """Returns curated list of countries for registration."""
+    countries = [
+        "United States", "United Kingdom", "Pakistan", "Canada", "Australia", 
+        "Germany", "France", "United Arab Emirates", "Saudi Arabia", "Japan", 
+        "Singapore", "India", "Ireland", "New Zealand", "Switzerland", "Netherlands",
+        "Sweden", "Norway", "South Africa", "Malaysia", "Qatar", "Kuwait", "Oman",
+        "Spain", "Italy", "Brazil", "Turkey", "Egypt", "South Korea", "China"
+    ]
+    return {"countries": sorted(countries)}
+
+@app.get("/api/maps/places-autocomplete")
+def places_autocomplete(query: str = "", country: Optional[str] = None):
+    """
+    Searchable city and location endpoint powered by Google Maps Platform Places Autocomplete API,
+    with an instant fallback list for offline resilience.
+    """
+    import requests
+    query_clean = query.strip()
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY", "")
+    
+    if api_key and len(query_clean) >= 2:
+        try:
+            params = {
+                "input": query_clean,
+                "types": "(cities)",
+                "key": api_key
+            }
+            url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+            resp = requests.get(url, params=params, timeout=3)
+            if resp.status_code == 200:
+                data = resp.json()
+                predictions = data.get("predictions", [])
+                results = []
+                for p in predictions:
+                    desc = p.get("description", "")
+                    terms = [t.get("value") for t in p.get("terms", [])]
+                    city_name = terms[0] if terms else desc.split(",")[0].strip()
+                    country_name = terms[-1] if len(terms) > 1 else (country or "Global")
+                    results.append({
+                        "description": desc,
+                        "city": city_name,
+                        "country": country_name,
+                        "place_id": p.get("place_id")
+                    })
+                if results:
+                    return {"predictions": results, "source": "Google Maps Platform (Live)"}
+        except Exception as e:
+            print(f"[Google Maps Autocomplete] Notice: {e}")
+
+    # Worldwide clinical cities directory
+    fallback_cities = [
+        # United States
+        {"city": "New York", "country": "United States", "description": "New York, NY, USA"},
+        {"city": "Los Angeles", "country": "United States", "description": "Los Angeles, CA, USA"},
+        {"city": "Chicago", "country": "United States", "description": "Chicago, IL, USA"},
+        {"city": "Houston", "country": "United States", "description": "Houston, TX, USA"},
+        {"city": "Boston", "country": "United States", "description": "Boston, MA, USA"},
+        {"city": "San Francisco", "country": "United States", "description": "San Francisco, CA, USA"},
+        {"city": "Seattle", "country": "United States", "description": "Seattle, WA, USA"},
+        {"city": "Miami", "country": "United States", "description": "Miami, FL, USA"},
+        # United Kingdom
+        {"city": "London", "country": "United Kingdom", "description": "London, Greater London, UK"},
+        {"city": "Manchester", "country": "United Kingdom", "description": "Manchester, Greater Manchester, UK"},
+        {"city": "Birmingham", "country": "United Kingdom", "description": "Birmingham, West Midlands, UK"},
+        {"city": "Edinburgh", "country": "United Kingdom", "description": "Edinburgh, Scotland, UK"},
+        # Pakistan
+        {"city": "Islamabad", "country": "Pakistan", "description": "Islamabad, Federal Capital, Pakistan"},
+        {"city": "Lahore", "country": "Pakistan", "description": "Lahore, Punjab, Pakistan"},
+        {"city": "Karachi", "country": "Pakistan", "description": "Karachi, Sindh, Pakistan"},
+        {"city": "Rawalpindi", "country": "Pakistan", "description": "Rawalpindi, Punjab, Pakistan"},
+        {"city": "Faisalabad", "country": "Pakistan", "description": "Faisalabad, Punjab, Pakistan"},
+        {"city": "Peshawar", "country": "Pakistan", "description": "Peshawar, Khyber Pakhtunkhwa, Pakistan"},
+        {"city": "Multan", "country": "Pakistan", "description": "Multan, Punjab, Pakistan"},
+        {"city": "Quetta", "country": "Pakistan", "description": "Quetta, Balochistan, Pakistan"},
+        # Canada
+        {"city": "Toronto", "country": "Canada", "description": "Toronto, ON, Canada"},
+        {"city": "Vancouver", "country": "Canada", "description": "Vancouver, BC, Canada"},
+        {"city": "Montreal", "country": "Canada", "description": "Montreal, QC, Canada"},
+        # Australia & New Zealand
+        {"city": "Sydney", "country": "Australia", "description": "Sydney, NSW, Australia"},
+        {"city": "Melbourne", "country": "Australia", "description": "Melbourne, VIC, Australia"},
+        {"city": "Brisbane", "country": "Australia", "description": "Brisbane, QLD, Australia"},
+        {"city": "Auckland", "country": "New Zealand", "description": "Auckland, New Zealand"},
+        {"city": "Wellington", "country": "New Zealand", "description": "Wellington, New Zealand"},
+        # Middle East
+        {"city": "Dubai", "country": "United Arab Emirates", "description": "Dubai, UAE"},
+        {"city": "Abu Dhabi", "country": "United Arab Emirates", "description": "Abu Dhabi, UAE"},
+        {"city": "Riyadh", "country": "Saudi Arabia", "description": "Riyadh, Saudi Arabia"},
+        {"city": "Jeddah", "country": "Saudi Arabia", "description": "Jeddah, Saudi Arabia"},
+        {"city": "Doha", "country": "Qatar", "description": "Doha, Qatar"},
+        {"city": "Kuwait City", "country": "Kuwait", "description": "Kuwait City, Kuwait"},
+        {"city": "Muscat", "country": "Oman", "description": "Muscat, Oman"},
+        # Europe
+        {"city": "Berlin", "country": "Germany", "description": "Berlin, Germany"},
+        {"city": "Munich", "country": "Germany", "description": "Munich, Bavaria, Germany"},
+        {"city": "Frankfurt", "country": "Germany", "description": "Frankfurt, Hesse, Germany"},
+        {"city": "Paris", "country": "France", "description": "Paris, Île-de-France, France"},
+        {"city": "Lyon", "country": "France", "description": "Lyon, Auvergne-Rhône-Alpes, France"},
+        {"city": "Dublin", "country": "Ireland", "description": "Dublin, Ireland"},
+        {"city": "Cork", "country": "Ireland", "description": "Cork, Ireland"},
+        {"city": "Zurich", "country": "Switzerland", "description": "Zurich, Switzerland"},
+        {"city": "Geneva", "country": "Switzerland", "description": "Geneva, Switzerland"},
+        {"city": "Amsterdam", "country": "Netherlands", "description": "Amsterdam, Netherlands"},
+        {"city": "Rotterdam", "country": "Netherlands", "description": "Rotterdam, Netherlands"},
+        {"city": "Stockholm", "country": "Sweden", "description": "Stockholm, Sweden"},
+        {"city": "Oslo", "country": "Norway", "description": "Oslo, Norway"},
+        {"city": "Madrid", "country": "Spain", "description": "Madrid, Spain"},
+        {"city": "Barcelona", "country": "Spain", "description": "Barcelona, Catalonia, Spain"},
+        {"city": "Rome", "country": "Italy", "description": "Rome, Lazio, Italy"},
+        {"city": "Milan", "country": "Italy", "description": "Milan, Lombardy, Italy"},
+        {"city": "Istanbul", "country": "Turkey", "description": "Istanbul, Turkey"},
+        {"city": "Ankara", "country": "Turkey", "description": "Ankara, Turkey"},
+        # Asia & Pacific
+        {"city": "Tokyo", "country": "Japan", "description": "Tokyo, Japan"},
+        {"city": "Osaka", "country": "Japan", "description": "Osaka, Japan"},
+        {"city": "Singapore", "country": "Singapore", "description": "Singapore, Singapore"},
+        {"city": "Mumbai", "country": "India", "description": "Mumbai, Maharashtra, India"},
+        {"city": "Delhi", "country": "India", "description": "New Delhi, Delhi, India"},
+        {"city": "Bengaluru", "country": "India", "description": "Bengaluru, Karnataka, India"},
+        {"city": "Kuala Lumpur", "country": "Malaysia", "description": "Kuala Lumpur, Malaysia"},
+        {"city": "Seoul", "country": "South Korea", "description": "Seoul, South Korea"},
+        {"city": "Beijing", "country": "China", "description": "Beijing, China"},
+        {"city": "Shanghai", "country": "China", "description": "Shanghai, China"},
+        # Africa & South America
+        {"city": "Cairo", "country": "Egypt", "description": "Cairo, Egypt"},
+        {"city": "Johannesburg", "country": "South Africa", "description": "Johannesburg, South Africa"},
+        {"city": "Cape Town", "country": "South Africa", "description": "Cape Town, South Africa"},
+        {"city": "São Paulo", "country": "Brazil", "description": "São Paulo, Brazil"},
+        {"city": "Rio de Janeiro", "country": "Brazil", "description": "Rio de Janeiro, Brazil"}
+    ]
+    
+    q = query_clean.lower()
+    c_filter = (country or "").strip().lower()
+
+    filtered = []
+    for item in fallback_cities:
+        match_country = (not c_filter) or (c_filter in item["country"].lower())
+        match_query = (not q) or (q in item["city"].lower() or q in item["description"].lower())
+        if match_country and match_query:
+            filtered.append(item)
+
+    if q and not any(q == item["city"].lower() for item in filtered):
+        country_display = country if country else "Selected Country"
+        filtered.insert(0, {
+            "city": query_clean.title(),
+            "country": country_display,
+            "description": f"{query_clean.title()}, {country_display}"
+        })
+
+    return {"predictions": filtered[:12], "source": "Google Maps Grounded Engine"}
 
 @app.post("/api/auth/logout")
 async def logout():

@@ -50,11 +50,15 @@ class DatabaseManager:
                 );
             """)
 
-            # Ensure phone column exists for existing installations
+            # Ensure phone, country, and city columns exist for existing installations
             cursor.execute("PRAGMA table_info(users);")
             u_cols = [r[1] for r in cursor.fetchall()]
             if "phone" not in u_cols:
                 cursor.execute("ALTER TABLE users ADD COLUMN phone TEXT;")
+            if "country" not in u_cols:
+                cursor.execute("ALTER TABLE users ADD COLUMN country TEXT DEFAULT 'United States';")
+            if "city" not in u_cols:
+                cursor.execute("ALTER TABLE users ADD COLUMN city TEXT DEFAULT 'New York';")
 
             # 2. Patients Table
             cursor.execute("""
@@ -135,13 +139,13 @@ class DatabaseManager:
                 conn.commit()
 
     # ----------------- User Management -----------------
-    def create_user(self, full_name: str, username: str, email: str, password_hash: str, role: str = 'User', phone: str = "") -> int:
+    def create_user(self, full_name: str, username: str, email: str, password_hash: str, role: str = 'User', phone: str = "", country: str = "United States", city: str = "New York") -> int:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO users (full_name, username, email, password_hash, role, phone)
-                VALUES (?, ?, ?, ?, ?, ?);
-            """, (full_name.strip(), username.strip(), email.strip(), password_hash, role, phone.strip() if phone else ""))
+                INSERT INTO users (full_name, username, email, password_hash, role, phone, country, city)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            """, (full_name.strip(), username.strip(), email.strip(), password_hash, role, phone.strip() if phone else "", country.strip() if country else "United States", city.strip() if city else "New York"))
             conn.commit()
             return cursor.lastrowid
 
@@ -162,7 +166,7 @@ class DatabaseManager:
     def get_all_users(self) -> List[Dict[str, Any]]:
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT user_id, full_name, username, email, role, is_active, created_at FROM users ORDER BY created_at DESC;")
+            cursor.execute("SELECT user_id, full_name, username, email, role, phone, country, city, is_active, created_at FROM users ORDER BY created_at DESC;")
             return [dict(row) for row in cursor.fetchall()]
 
     def update_user_status(self, user_id: int, is_active: bool):
@@ -179,7 +183,8 @@ class DatabaseManager:
 
     def update_user_credentials(self, user_id: int, username: Optional[str] = None, full_name: Optional[str] = None,
                                 email: Optional[str] = None, password_hash: Optional[str] = None,
-                                role: Optional[str] = None, is_active: Optional[bool] = None):
+                                role: Optional[str] = None, is_active: Optional[bool] = None,
+                                country: Optional[str] = None, city: Optional[str] = None):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             updates = []
@@ -202,6 +207,12 @@ class DatabaseManager:
             if is_active is not None:
                 updates.append("is_active = ?")
                 params.append(1 if is_active else 0)
+            if country:
+                updates.append("country = ?")
+                params.append(country.strip())
+            if city:
+                updates.append("city = ?")
+                params.append(city.strip())
             if updates:
                 params.append(user_id)
                 cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE user_id = ?;", tuple(params))

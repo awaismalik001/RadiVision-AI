@@ -70,7 +70,7 @@ function createWindow() {
   ipcMain.on('window:auth-signup', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.setResizable(true);
-      mainWindow.setSize(440, 620, true);
+      mainWindow.setSize(470, 750, true);
       mainWindow.setResizable(false);
       mainWindow.center();
     }
