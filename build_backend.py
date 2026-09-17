@@ -112,7 +112,7 @@ def build_backend():
     exe_path = os.path.join(dist_dir, "server", "server.exe")
     if os.path.exists(exe_path):
         print("=" * 60)
-        print(f"[✓] Backend standalone executable compiled successfully!")
+        print(f"[SUCCESS] Backend standalone executable compiled successfully!")
         print(f"    Binary Path: {exe_path}")
         print(f"    Size: {os.path.getsize(exe_path) / (1024 * 1024):.2f} MB")
         print("=" * 60)

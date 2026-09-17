@@ -34,3 +34,9 @@ reports/annotated_*
 
 # Databases
 *.sqlite3
+
+# Packaging & Dist
+build-server/
+dist-server/
+frontend/dist-electron/
+*.spec

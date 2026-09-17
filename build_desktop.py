@@ -57,7 +57,7 @@ def main():
     app_exe = os.path.join(output_dir, "RadiVision AI.exe")
 
     log("=" * 60)
-    log(f"🎉 Desktop Workstation Build Complete in {elapsed:.1f}s!")
+    log(f"[SUCCESS] Desktop Workstation Build Complete in {elapsed:.1f}s!")
     log(f"Executable: {app_exe}")
     log(f"Unpacked Distribution Directory: {output_dir}")
     log("Launch 'RadiVision AI.exe' directly like WhatsApp Desktop without any terminals or IDEs.")
