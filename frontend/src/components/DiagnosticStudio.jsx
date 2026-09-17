@@ -4,7 +4,6 @@ import axios from 'axios';
 import { 
   UploadCloud, 
   FileText, 
-  MapPin, 
   CheckCircle2, 
   AlertTriangle, 
   Phone, 
@@ -38,7 +37,11 @@ export default function DiagnosticStudio({ currentUser }) {
   const [patientAge, setPatientAge] = useState(34);
   const [patientGender, setPatientGender] = useState("Female");
   const [patientId, setPatientId] = useState(`RV-${Math.floor(100000 + Math.random() * 900000)}`);
-  const [location, setLocation] = useState("New York");
+  
+  // User's location is automatically bound from user profile (city & country)
+  const userLocation = currentUser?.city 
+    ? (currentUser?.country ? `${currentUser.city}, ${currentUser.country}` : currentUser.city)
+    : (currentUser?.location || "New York");
 
   // File & Prediction State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -55,11 +58,9 @@ export default function DiagnosticStudio({ currentUser }) {
     if (sampleType === "Bone") {
       setPreviewUrl("/sample_bone.png");
       setPatientAge(34);
-      setLocation("New York");
     } else {
       setPreviewUrl("/sample_chest.png");
       setPatientAge(47);
-      setLocation("Islamabad");
     }
     setAnalysisResult(null);
     setSelectedFile("SAMPLE_PRESET");
@@ -104,7 +105,7 @@ export default function DiagnosticStudio({ currentUser }) {
       formData.append("patient_age", patientAge);
       formData.append("patient_gender", patientGender);
       formData.append("patient_id", patientId);
-      formData.append("location", location);
+      formData.append("location", userLocation);
       formData.append("user_id", currentUser?.user_id || 2);
 
       const resp = await axios.post('/api/predict', formData, {
@@ -314,7 +315,7 @@ export default function DiagnosticStudio({ currentUser }) {
               </span>
             </h2>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">Medical Record # (MRN)</label>
                 <input
@@ -326,22 +327,8 @@ export default function DiagnosticStudio({ currentUser }) {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">GPS / City Location</label>
-                <div className="relative">
-                  <MapPin className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. New York, Islamabad"
-                    className="w-full pl-7 pr-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="col-span-2">
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1">Age & Gender</label>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     value={patientAge}
