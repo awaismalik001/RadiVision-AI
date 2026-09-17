@@ -39,6 +39,9 @@ export default function App() {
     setCurrentUser(user);
     localStorage.setItem('radivision_user', JSON.stringify(user));
     setShowAuthModal(false);
+    if (window.electronAPI?.maximizeWorkstation) {
+      window.electronAPI.maximizeWorkstation();
+    }
     if (user.role === 'Admin') {
       setActiveTab('admin');
     } else {
@@ -56,6 +59,9 @@ export default function App() {
     setCurrentUser(null);
     setActiveTab('dashboard');
     setShowAuthModal(false);
+    if (window.electronAPI?.shrinkToAuthWindow) {
+      window.electronAPI.shrinkToAuthWindow();
+    }
   };
 
   return (
@@ -64,53 +70,21 @@ export default function App() {
         {showSplash ? (
           <SplashScreen key="splash" onComplete={() => setShowSplash(false)} />
         ) : !currentUser ? (
-          /* Desktop Login Screen: Opened upon app launch */
+          /* Desktop Login Screen: Only the clean centered Auth card */
           <motion.div
             key="login-screen"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="w-full h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-950 via-[#0B1727] to-[#0A2540] relative p-4 select-none"
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full min-h-screen flex items-center justify-center bg-slate-950 p-2 select-none overflow-hidden"
           >
-            {/* Background Medical Pattern & Radial Glow */}
-            <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#1982bf_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#1982bf]/20 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Top Desktop App Branding */}
-            <div className="absolute top-6 left-8 flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-[#1982bf] flex items-center justify-center text-white font-bold shadow-lg ring-1 ring-cyan-400/40">
-                <Stethoscope className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="text-base font-bold text-white tracking-wider">
-                  RADIVISION <span className="text-cyan-400">AI</span>
-                </div>
-                <div className="text-[10px] text-slate-400 font-mono tracking-wider">
-                  NATIVE DESKTOP CLINICAL WORKSTATION
-                </div>
-              </div>
-            </div>
-
-            {/* System Engine Status Badge */}
-            <div className="absolute top-6 right-8 flex items-center space-x-2">
-              <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>PACS ENGINE ONLINE</span>
-              </span>
-            </div>
-
-            {/* Centered Desktop Login Card */}
+            {/* Centered Desktop Auth Card (Sign In & Sign Up Views) */}
             <AuthModal
               isOpen={true}
               isStandalone={true}
               onLoginSuccess={handleLoginSuccess}
             />
-
-            {/* Bottom Security Note */}
-            <div className="absolute bottom-5 text-center text-[11px] text-slate-500 font-mono">
-              RadiVision AI v2.0 • ViT-B/16 Deep Learning • AES-256 Vault Encryption
-            </div>
           </motion.div>
         ) : (
           /* Authenticated Workstation: Shown ONLY after successful login */

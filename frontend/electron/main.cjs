@@ -14,12 +14,12 @@ let mainWindow = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 920,
-    minWidth: 1120,
-    minHeight: 740,
-    title: "RadiVision AI — Clinical Desktop Diagnostic Suite",
-    backgroundColor: '#0B1727', // Clinical dark navy while initializing
+    width: 580,
+    height: 440,
+    center: true,
+    resizable: false,
+    title: "RadiVision AI — Professional Medical X-Ray Diagnostic Suite",
+    backgroundColor: '#070B14',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -50,8 +50,35 @@ function createWindow() {
   }
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.maximize();
     mainWindow.show();
+  });
+
+  // Window management IPC listeners for compact splash & auth windows
+  ipcMain.on('window:to-auth', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setResizable(true);
+      mainWindow.setSize(400, 600, true);
+      mainWindow.setResizable(false);
+      mainWindow.center();
+    }
+  });
+
+  ipcMain.on('window:maximize-workstation', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setResizable(true);
+      mainWindow.setMinimumSize(1120, 740);
+      mainWindow.maximize();
+    }
+  });
+
+  ipcMain.on('window:shrink-to-auth', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.unmaximize();
+      mainWindow.setMinimumSize(320, 480);
+      mainWindow.setSize(400, 600, true);
+      mainWindow.setResizable(false);
+      mainWindow.center();
+    }
   });
 
   // Forward renderer console logs to terminal for easy diagnosis

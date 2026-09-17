@@ -12,5 +12,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
   onAutoLogout: (callback) => {
     ipcRenderer.on('app:auto-logout', (_event, value) => callback(value));
-  }
+  },
+  toAuthWindow: () => ipcRenderer.send('window:to-auth'),
+  maximizeWorkstation: () => ipcRenderer.send('window:maximize-workstation'),
+  shrinkToAuthWindow: () => ipcRenderer.send('window:shrink-to-auth')
 });
