@@ -1,0 +1,42 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Launch RadiVision AI Desktop App",
+            "type": "shell",
+            "command": ".\\launch_desktop_app.bat",
+            "windows": {
+                "command": ".\\launch_desktop_app.bat"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Start FastAPI Backend (server.py)",
+            "type": "shell",
+            "command": "python server.py",
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Electron Desktop (npm run electron)",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+            "command": "npm run electron",
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Web Dev Mode (npm run dev)",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+            "command": "npm run dev",
+            "problemMatcher": []
+        }
+    ]
+}
