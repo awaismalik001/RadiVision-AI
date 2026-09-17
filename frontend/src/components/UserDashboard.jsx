@@ -285,7 +285,7 @@ export default function UserDashboard({ currentUser, onNavigate }) {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
-                  <th className="py-2.5 px-3">{isAdmin ? "Patient / ID" : "Study Reference"}</th>
+                  {isAdmin && <th className="py-2.5 px-3">Patient / ID</th>}
                   <th className="py-2.5 px-3">Modality</th>
                   <th className="py-2.5 px-3">Primary Finding</th>
                   <th className="py-2.5 px-3">Confidence</th>
@@ -296,7 +296,7 @@ export default function UserDashboard({ currentUser, onNavigate }) {
               <tbody className="divide-y divide-slate-100">
                 {scans.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="py-8 text-center text-slate-400 text-xs">
+                    <td colSpan={isAdmin ? 6 : 5} className="py-8 text-center text-slate-400 text-xs">
                       {loading ? "Loading examination records..." : "No recent scans found. Launch Diagnostic Studio to analyze a radiograph."}
                     </td>
                   </tr>
@@ -308,20 +308,14 @@ export default function UserDashboard({ currentUser, onNavigate }) {
 
                     return (
                       <tr key={scan.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-3">
-                          {isAdmin ? (
-                            <>
-                              <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
-                              <div className="text-[10px] font-mono text-slate-500">
-                                {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
-                              </div>
-                            </>
-                          ) : (
-                            <div className="font-semibold text-slate-900 text-[13px] font-mono">
-                              {`Study #RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
+                        {isAdmin && (
+                          <td className="py-2.5 px-3">
+                            <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
+                            <div className="text-[10px] font-mono text-slate-500">
+                              {scan.patient_contact || `RV-${(scan.scan_id || 100).toString().padStart(6, '0')}`}
                             </div>
-                          )}
-                        </td>
+                          </td>
+                        )}
                         <td className="py-2.5 px-3">
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
                             scan.scan_type === 'Chest' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800'
