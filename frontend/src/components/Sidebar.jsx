@@ -114,15 +114,15 @@ export default function Sidebar({
 
         {/* System Telemetry Specs (when expanded) */}
         {!isCollapsed && (
-          <div className="mx-3 mt-3.5 p-3 rounded-xl bg-white/10 border border-white/15 text-white">
-            <div className="flex items-center justify-between text-white/85 mb-2 font-mono text-xs">
+          <div className="mx-3 mt-2 mb-1 p-2.5 rounded-xl bg-white/10 border border-white/15 text-white">
+            <div className="flex items-center justify-between text-white/85 mb-1.5 font-mono text-xs">
               <span className="flex items-center space-x-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping" />
                 <span>ACTIVE ENGINE</span>
               </span>
               <span className="text-cyan-200 font-semibold">ViT-B/16</span>
             </div>
-            <div className="space-y-1.5 text-xs text-white/90">
+            <div className="space-y-1 text-xs text-white/90">
               <div className="flex justify-between">
                 <span className="text-white/75">PACS Vault:</span>
                 <span className="font-mono text-emerald-200 flex items-center space-x-1">
@@ -139,9 +139,9 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Bottom User Profile Card & Logout */}
-      <div className="p-2.5 border-t border-[#156ea3]">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-2 rounded-xl bg-white/15 border border-white/20`}>
+      {/* Bottom User Profile Card & Logout (with comfortable pb-6 bottom clearance) */}
+      <div className="p-3 pb-6 border-t border-[#156ea3] shrink-0">
+        <div className={`flex items-center ${isCollapsed ? 'flex-col space-y-2 justify-center' : 'justify-between'} p-2 rounded-xl bg-white/15 border border-white/20 shadow-sm`}>
           <div className="flex items-center space-x-2.5 overflow-hidden">
             <div className="relative shrink-0">
               <div className="w-8 h-8 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center text-white font-bold">
@@ -162,11 +162,20 @@ export default function Sidebar({
             )}
           </div>
 
-          {!isCollapsed && (
+          {!isCollapsed ? (
             <button
               onClick={onLogout}
-              className="p-1.5 rounded-lg text-white/75 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              title="Sign Out"
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-white/20 hover:bg-rose-500/40 text-white border border-white/30 hover:border-rose-300/60 transition-all cursor-pointer shadow-xs text-xs font-semibold shrink-0"
+              title="Sign Out of Workstation"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
+          ) : (
+            <button
+              onClick={onLogout}
+              className="p-2 rounded-lg bg-white/15 hover:bg-rose-500/40 text-white border border-white/25 transition-all cursor-pointer"
+              title="Sign Out of Workstation"
             >
               <LogOut className="w-4 h-4" />
             </button>
