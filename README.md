@@ -29,16 +29,23 @@ The platform provides:
 
 ## 2. Key Recent Updates & Architectural Advancements
 
-1. **Gemini 3.8 Flash Multimodal Reasoning:** Upgraded the core generative AI pipeline to Google's latest **Gemini 3.8 Flash** (with fallback to **Gemini 3.5 Flash Lite**) via the `google-genai` SDK for image quality assessment and diagnostic cross-verification.
-2. **Compact Desktop Startup Lifecycle:**
-   - On application launch, a centered, compact window displays the animated RadiVision AI circular workflow image with progressive unblurring and a 5-second calibration timer.
-   - Smoothly transitions into a compact authentication dialog (no full-screen blue backdrop).
-   - Only expands and maximizes into the full clinical workstation upon verified clinician login.
-3. **Role-Based Access Control (RBAC):**
+1. **Gemini 3.8 Flash Multimodal Reasoning:** Upgraded the core generative AI pipeline to Google's latest **Gemini 3.8 Flash** (with resilient fallback to **Gemini 3.5 Flash Lite**) via the `google-genai` SDK for image quality assessment and diagnostic cross-verification.
+2. **Zero-Background Frameless Startup Lifecycle:**
+   - The desktop client launches as a completely frameless, transparent window (`frame: false, transparent: true, backgroundColor: '#00000000'`).
+   - Displays a floating, centered animated circular splash screen (`580px × 440px`) with progressive unblurring, a 5-second countdown calibration timer, and an instant `Skip →` button.
+   - Smoothly transitions into a compact, floating authentication card with zero outer window bleed, dynamically sizing between **Sign In** (`390px × 460px`) and **Sign Up** (`440px × 620px`).
+   - Dynamically expands and maximizes into the full-screen clinical workstation upon verified login.
+3. **Streamlined Tabular Scans Archive (Removal of Radiograph Column):**
+   - Removed the non-functional radiograph thumbnail column and full-image popover modal from both **PACS Patient Records** (Admin view) and **My Scan History** (User view).
+   - Eliminates broken image placeholders and local filesystem resolution bottlenecks, delivering an uncluttered, high-density tabular view with direct RSNA PDF report export.
+4. **Ergonomic Sidebar & Taskbar Clearance:**
+   - Added generous bottom padding (`pb-6`) to the sidebar user card, ensuring logout controls are never clipped by the Windows taskbar or display borders.
+   - Integrated an explicit, high-visibility **"Log Out"** button with dedicated icon and text label.
+5. **Role-Based Access Control (RBAC):**
    - **Admin:** Complete access to institution-wide PACS scans, user status management, system activity audit logs, executive Excel database export, and sample image loading buttons.
    - **User (Clinician / Radiologist):** Focused diagnostic studio, streamlined **My Scan History** (with patient name and national ID omitted for personal records privacy), and a clean **User Dashboard** (study references omitted from recent studies list). Public signups automatically assign the secure `User` role.
-4. **Sample Loading Access Scoping:** Diagnostic sample loading buttons (*"Load Bone Sample"* and *"Load Chest Sample"*) are strictly restricted to Administrators to prevent accidental overwrites during clinical use.
-5. **Exact Date & Timestamp Auditing:** Standardized high-precision timestamps (`YYYY-MM-DD HH:MM:SS` and `DD Mon YYYY, hh:mm:ss AM/PM`) across all user interfaces, database records, RSNA-format clinical PDF reports, and Excel audit logs.
+6. **Sample Loading Access Scoping:** Diagnostic sample loading buttons (*"Load Bone Sample"* and *"Load Chest Sample"*) are strictly restricted to Administrators to prevent accidental overwrites during clinical use.
+7. **Exact Date & Timestamp Auditing:** Standardized high-precision timestamps (`YYYY-MM-DD HH:MM:SS` and `DD Mon YYYY, hh:mm:ss AM/PM`) across all user interfaces, database records, RSNA-format clinical PDF reports, and Excel audit logs.
 
 ---
 
@@ -184,7 +191,40 @@ cd ..
 
 ## 7. Running the Application
 
-### Option A: Native Desktop Application (Recommended)
+### Option A: One-Click Desktop Launcher (Fastest)
+
+From Windows File Explorer or PowerShell / CMD at the project root, run:
+```cmd
+.\launch_desktop_app.bat
+```
+*This automated script boots the FastAPI AI backend in the background and launches the frameless Electron desktop workstation.*
+
+---
+
+### Option B: Launching in Visual Studio / VS Code
+
+To run the application inside **Visual Studio** or **Visual Studio Code**:
+
+1. Open the project root folder in VS Code / Visual Studio (`File > Open Folder... > d:\My Projects\RadiVision AI`).
+2. Open an integrated terminal (`Ctrl + ~` or ``Ctrl + ` ``).
+3. Run the automated desktop launcher:
+   ```powershell
+   .\launch_desktop_app.bat
+   ```
+   *Alternatively, run in two separate split terminals:*
+   - **Terminal 1 (Backend Deep Learning Engine):**
+     ```powershell
+     python server.py
+     ```
+   - **Terminal 2 (Frontend Desktop Application):**
+     ```powershell
+     cd frontend
+     npm run electron
+     ```
+
+---
+
+### Option C: Manual Multi-Terminal Desktop Launch
 
 1. **Start the FastAPI Backend Service:**
    ```bash
@@ -203,7 +243,7 @@ cd ..
 
 ---
 
-### Option B: Web Workstation (Browser Mode)
+### Option D: Web Workstation (Browser Mode)
 
 1. **Start the FastAPI Backend Service:**
    ```bash
@@ -232,12 +272,24 @@ cd ..
 - **One-Click RSNA PDF Generation:** Downloads a clinical report complete with patient demographics, image viewports, Grad-CAM heatmaps, diagnosis, and local healthcare referrals.
 
 ### B. User Dashboard & My Scan History
-- **Personal Scan History:** Clinicians can search, filter, and review all previous scans performed under their account. Patient Name and National ID columns are omitted to preserve patient privacy in personal clinician views.
+- **Personal Scan History:** Clinicians can search, filter, and review all previous scans performed under their account.
+- **Streamlined Tabular Display:** High-density clinical table without broken image placeholder latency:
+  - **Modality** (`Chest` / `Bone`)
+  - **ViT Diagnostic Finding** (`Normal`, `Pneumonia`, `Fracture`)
+  - **Confidence** (`95.0%`)
+  - **Date & Timestamp** (`2026-09-17 13:30:15`)
+  - **Action** (Direct RSNA PDF export)
+- **Privacy Protection:** Patient Name and National ID columns are omitted to preserve patient privacy in personal clinician views.
 - **Recent Clinical Studies:** Displays recent triage activity with clean, uncluttered columns (study reference identifiers removed for regular users).
-- **Exact Timestamps:** Every scan is labeled with the exact execution date and time (e.g., `2026-09-17 13:30:15`).
 
 ### C. Administrator Management Console
-- **PACS Archive:** Comprehensive institutional repository displaying all patient records, encrypted demographics, and diagnostic outcomes.
+- **PACS Patient Records:** Comprehensive institutional repository displaying all patient records:
+  - **Patient / National ID** (`Patient Name` + `MRN/Contact`)
+  - **Modality** (`Chest` / `Bone`)
+  - **ViT Diagnostic Finding** (`Normal`, `Pneumonia`, `Fracture`)
+  - **Confidence** (`95.0%`)
+  - **Date & Timestamp** (`2026-09-17 13:30:15`)
+  - **Action** (Direct RSNA PDF export)
 - **User Administration:** Activate or deactivate user accounts, modify roles between `User` and `Admin`, and review clinician activity.
 - **Security Audit Logs:** Complete chronological trail of logins, scans, report downloads, and configuration changes with exact timestamps.
 - **Executive Excel Export:** Single-click generation of a 3-sheet `.xlsx` workbook containing PACS patient records, audit trails, and triage analytics.
@@ -308,6 +360,7 @@ RadiVision AI/
 │
 ├── reports/                          # Auto-generated clinical PDF reports and Excel exports
 ├── uploads/                          # Temporary encrypted storage for uploaded scans
+├── launch_desktop_app.bat            # One-click native desktop launcher
 ├── server.py                         # FastAPI REST API bridge on port 8000
 ├── requirements.txt                  # Python dependencies manifest
 ├── .env                              # Environment variables (API keys, secrets)
