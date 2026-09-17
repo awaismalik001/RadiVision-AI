@@ -2,26 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   FolderArchive, 
-  Clock,
+  Clock, 
   Search, 
   Filter, 
   Download, 
   RefreshCw, 
   CheckCircle2, 
   AlertTriangle, 
-  FileText, 
-  Lock, 
-  ArrowRight,
-  Eye,
-  Layers,
-  Sparkles
+  ArrowRight
 } from 'lucide-react';
-
-const getMediaUrl = (url) => {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) return url;
-  return `http://127.0.0.1:8000${url.startsWith('/') ? '' : '/'}${url}`;
-};
 
 export default function PatientHistory({ currentUser, isMyHistory = false, onNavigateStudio }) {
   const [scans, setScans] = useState([]);
@@ -29,7 +18,6 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedModality, setSelectedModality] = useState("ALL");
   const [downloadingId, setDownloadingId] = useState(null);
-  const [selectedPreviewScan, setSelectedPreviewScan] = useState(null);
 
   const fetchHistory = async () => {
     setLoading(true);
@@ -197,7 +185,6 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wide">
-                  <th className="py-2.5 px-3">Radiograph</th>
                   {!isMyHistory && <th className="py-2.5 px-3">Patient / National ID</th>}
                   <th className="py-2.5 px-3">Modality</th>
                   <th className="py-2.5 px-3">ViT Diagnostic Finding</th>
@@ -209,7 +196,7 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
               <tbody className="divide-y divide-slate-100">
                 {filteredScans.length === 0 ? (
                   <tr>
-                    <td colSpan={isMyHistory ? 6 : 7} className="py-10 text-center text-slate-400 text-xs">
+                    <td colSpan={isMyHistory ? 5 : 6} className="py-10 text-center text-slate-400 text-xs">
                       {loading ? "Loading scan archive..." : "No scan records found matching your filters."}
                     </td>
                   </tr>
@@ -218,31 +205,9 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                     const pred = scan.prediction || 'Normal';
                     const isAbnormal = pred.toLowerCase().includes('abnormal') || pred.toLowerCase().includes('pneumonia') || pred.toLowerCase().includes('fracture');
                     const conf = scan.confidence ? (scan.confidence * 100).toFixed(1) : '95.0';
-                    const imgUrl = getMediaUrl(scan.annotated_image_path || scan.raw_image_path);
 
                     return (
                       <tr key={scan.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
-                        {/* Radiograph Thumbnail */}
-                        <td className="py-2.5 px-3">
-                          <div 
-                            onClick={() => setSelectedPreviewScan(scan)}
-                            className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden relative cursor-pointer group flex items-center justify-center shadow-sm"
-                          >
-                            {imgUrl ? (
-                              <img 
-                                src={imgUrl} 
-                                alt="Thumb" 
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform" 
-                              />
-                            ) : (
-                              <FileText className="w-4 h-4 text-slate-500" />
-                            )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px]">
-                              <Eye className="w-3 h-3" />
-                            </div>
-                          </div>
-                        </td>
-
                         {!isMyHistory && (
                           <td className="py-2.5 px-3">
                             <div className="font-semibold text-slate-900 text-[13px]">{scan.patient_name || 'Anonymous Patient'}</div>
@@ -307,63 +272,6 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
           </div>
         </div>
       </div>
-
-      {/* Radiograph Full Inspection Modal */}
-      {selectedPreviewScan && (
-        <div 
-          onClick={() => setSelectedPreviewScan(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-pointer"
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-2xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 cursor-default"
-          >
-            <div className="p-4 bg-[#1982bf] text-white flex items-center justify-between">
-              <div className="font-bold text-sm flex items-center space-x-2">
-                <Layers className="w-4 h-4" />
-                <span>
-                  {isMyHistory 
-                    ? `Radiograph Inspection — Study #${selectedPreviewScan.scan_id}`
-                    : `PACS Radiograph Inspection — ${selectedPreviewScan.patient_name || 'Anonymous Patient'}`}
-                </span>
-              </div>
-              <button 
-                onClick={() => setSelectedPreviewScan(null)}
-                className="text-white/80 hover:text-white text-sm font-bold px-2 py-0.5 rounded-lg hover:bg-white/10"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6 bg-slate-900 flex items-center justify-center min-h-[360px]">
-              <img 
-                src={getMediaUrl(selectedPreviewScan.annotated_image_path || selectedPreviewScan.raw_image_path)} 
-                alt="Radiograph Inspection"
-                className="max-h-[480px] object-contain rounded-xl shadow-lg border border-slate-800" 
-              />
-            </div>
-            <div className="p-4 bg-white flex items-center justify-between border-t border-slate-200 text-xs">
-              <div>
-                <div>
-                  <span className="font-semibold text-slate-700">Diagnosis: </span>
-                  <span className="font-bold text-[#1982bf]">{selectedPreviewScan.prediction}</span>
-                  <span className="text-slate-400 ml-2 font-mono">({(selectedPreviewScan.confidence * 100).toFixed(1)}% confidence)</span>
-                </div>
-                <div className="text-slate-500 font-mono text-[11px] flex items-center space-x-1 mt-1">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  <span>Acquired & Analyzed: {formatDateTime(selectedPreviewScan.scan_date)}</span>
-                </div>
-              </div>
-              <button
-                onClick={() => handleDownloadPdf(selectedPreviewScan)}
-                className="px-4 py-2 rounded-xl bg-[#1982bf] hover:bg-[#156ea3] text-white font-semibold flex items-center space-x-1.5 cursor-pointer shadow-sm"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export PDF</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
