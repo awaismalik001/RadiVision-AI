@@ -31,3 +31,7 @@ openpyxl>=3.1.2
 
 # Generative AI Integration (Gemini AI Vision & Clinical Diagnostic Pipeline)
 google-genai>=1.0.0
+
+# Desktop Packaging & Build Tools
+pyinstaller>=6.0.0
+

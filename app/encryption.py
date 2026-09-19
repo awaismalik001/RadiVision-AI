@@ -21,7 +21,8 @@ except ImportError:
     HAS_AESGCM = False
 
 # Encryption key management - exactly 32 bytes for AES-256
-_DEFAULT_FALLBACK_KEY = b"RadivisionAI_AES256_SecureKey32B"  # Exactly 32 bytes for 256-bit key
+_DEFAULT_FALLBACK_KEY = b"\x93e\xbc\xc8?j_Y\x8f\xe6\xb2\xf7\xbc\xde\xed'\x86\xc5\xd30\xba\xb0\x7f\x1aCl\x04\xe2\xb4\xfa\xc9O"  # 32-byte default PACS vault key
+
 
 def _get_aes_key() -> bytes:
     """Retrieves 32-byte key from environment or fallback."""

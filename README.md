@@ -29,38 +29,55 @@ The platform provides:
 
 ## 2. Key Recent Updates & Architectural Advancements
 
-1. **4-Phase Deep Learning ViT Optimization Pipeline (Web Image Error Resolution & >90% Accuracy):**
-   - **Phase 1: Dataset Refinement with Gemini API:** Scanned all 19,027 local images across Chest and Bone datasets using Google Gemini Multimodal API (`gemini-3.6-flash`) and byte-level structural verification. Safely quarantined 74 invalid files (56 synthetic cartoon diagrams in chest, 18 physically corrupted byte streams in bone) into `_pruned_unviable/`, preserving a pristine clinical training corpus ([`dataset_refinement_audit.json`](file:///d:/My%20Projects/RadiVision%20AI/dataset/dataset_refinement_audit.json)).
-   - **Phase 2: Standardization (CLAHE & ViT Resolution):** Implemented [`app/preprocessing.py`](file:///d:/My%20Projects/RadiVision%20AI/app/preprocessing.py) featuring Contrast Limited Adaptive Histogram Equalization (CLAHE, `clipLimit=2.0`, `tileGridSize=(8,8)`), bicubic resizing to canonical $224 \times 224$ ViT resolution, and alpha stripping. Demonstrated $+2.2\%$ to $+13.3\%$ Shannon information entropy gains across web downloads and clinical radiographs.
-   - **Phase 3: Domain Shift Augmentation:** Implemented [`app/domain_shift_augmentation.py`](file:///d:/My%20Projects/RadiVision%20AI/app/domain_shift_augmentation.py) simulating realistic web degradations: simulated lossy JPEG compression (8x8 DCT quantization, $Q \in [35, 75]$), random affine/rotation ($\pm 12^\circ$), perspective keystoning ($\kappa=0.15$), Gaussian blur, and additive sensor noise—coupled with CLAHE regularization to guarantee domain invariance.
-   - **Phase 4: ViT-B/16 Optimization (AdamW & Cosine Annealing):** Optimized the dual-head Vision Transformer (`RadiVisionViT`) with the pre-trained ViT-B/16 backbone using the **AdamW optimizer** (`lr=2.5e-4`, `weight_decay=1e-2`), **Cosine Annealing schedule** (`CosineAnnealingLR`), and sensitivity-weighted loss. Fine-tuned weights saved to [`model/vit/vit_diagnostic_model.pt`](file:///d:/My%20Projects/RadiVision%20AI/model/vit/vit_diagnostic_model.pt) (328.9 MB).
-   - **Empirical Clinical Performance:**
-     - **Chest Model:** **95.38% Sensitivity**, **90.72% Ensemble Accuracy** (624 independent test scans).
-     - **Bone Model:** **90.45% Sensitivity**, **91.40% Ensemble Accuracy** (564 independent test scans).
-     - **Web-Downloaded Image Generalization:** Tested on arbitrary web-downloaded scans (`.webp`, `.jpg`, `.png`), eliminating previous uncalibrated prediction errors.
-2. **Gemini 3.8 Flash Multimodal Reasoning:** Upgraded generative AI cross-verification to Google's latest **Gemini 3.8 Flash** (with automatic fallback to **Gemini 3.5 Flash Lite**) via the `google-genai` SDK.
-3. **Single Setup Installer & Standalone Workstation Distribution:**
+1. **AES-256 Encryption Key Stabilization & Patient Data Migration:**
+   - Fixed `_DEFAULT_FALLBACK_KEY` from 33 bytes → exactly 32 bytes (`b"RadivisionAI_AES256_SecureKey32B"`), resolving `AESGCM` initialization crash on machines without a `.env` file.
+   - Added SHA-256 auto-digest for non-standard length keys and safe `__init__` exception handling.
+   - Added [`database/fix_patient_encryption.py`](database/fix_patient_encryption.py) — a migration utility that re-encrypts all patient records with the current `AES_SECRET_KEY`. Run this whenever the key changes.
+
+2. **Network Error on Installed Application — Root Cause Fixed:**
+   - Fixed `server.py` `load_dotenv()` resolution to find `.env` inside the installed `resources/` path.
+   - Increased `waitForBackend` timeout from 35 → 50 attempts (~30 seconds) in `electron/main.cjs` to accommodate slower machines.
+   - Changed raw `"Network Error"` message in `AuthModal.jsx` to `"AI Engine is initializing. Please wait a few seconds and try again."` for user-friendly feedback.
+   - Added `electronDist` in `frontend/package.json` to prevent GitHub download failures during offline packaging.
+   - Added `SKIP_BACKEND=1` env variable support in `build_desktop.py` to skip PyInstaller rebuild when `server.exe` already exists.
+
+3. **Dashboard Patient Names Fix (Encrypted Ciphertext Showing):**
+   - Fixed bug where `enc:aes256:...` raw ciphertext appeared in the **Recent Clinical Studies** table instead of patient names — caused by AES key mismatch between database creation and current runtime key.
+   - Fixed critical bug in `get_recent_scans_summary()` in `database.py`: `cursor.fetchall()` was called before `cursor.execute()`, causing the function to always return an empty list.
+
+4. **Responsive UI — Compact Prediction Badges:**
+   - Prediction badges now strip parenthetical sub-labels: `"FRACTURE DETECTED (Multimodal AI Escalation)"` → `"FRACTURE DETECTED"`. Full text preserved as a hover tooltip (`title` attribute).
+   - Added `whitespace-nowrap` to all prediction badges across `UserDashboard.jsx`, `AdminDashboard.jsx`, and `PatientHistory.jsx` to prevent multi-line wrapping in table rows.
+   - Fixed `isAbnormal` logic: `"NO FRACTURE OBSERVED"` no longer incorrectly flagged as abnormal due to `fracture` substring match.
+
+5. **4-Phase Deep Learning ViT Optimization Pipeline (>90% Accuracy):**
+   - **Phase 1 — Dataset Refinement with Gemini API:** Scanned 19,027 local images, quarantined 74 invalid files into `_pruned_unviable/`.
+   - **Phase 2 — Standardization (CLAHE & ViT Resolution):** CLAHE contrast enhancement, bicubic resize to 224×224, +2.2% to +13.3% Shannon entropy gain.
+   - **Phase 3 — Domain Shift Augmentation:** JPEG DCT simulation, affine/rotation ±12°, perspective keystoning, Gaussian blur, sensor noise.
+   - **Phase 4 — ViT-B/16 Optimization:** AdamW optimizer (lr=2.5e-4, weight_decay=1e-2), Cosine Annealing LR, sensitivity-weighted loss.
+   - **Clinical Performance:** Chest 90.72% accuracy / 95.38% sensitivity; Bone 91.40% accuracy / 90.45% sensitivity / 0.9691 AUC.
+
+6. **Gemini 3.8 Flash Multimodal Reasoning:** Latest Gemini model with automatic fallback to Gemini 3.5 Flash Lite via `google-genai` SDK.
+
+7. **Single Setup Installer & Standalone Workstation Distribution:**
    - **`RadiVision_AI_Setup.exe`:** Single-file automated Windows setup installer.
    - **`RadiVision-AI-Workstation.zip`:** Zero-install standalone portable distribution for clinical workstations.
-4. **Zero-Background Frameless Startup Lifecycle:**
-   - The desktop client launches as a completely frameless, transparent window (`frame: false, transparent: true, backgroundColor: '#00000000'`).
-   - Displays a floating, centered animated circular splash screen (`580px × 440px`) with progressive unblurring, a 5-second countdown calibration timer, and an instant `Skip →` button.
-   - Smoothly transitions into a compact, floating authentication card with zero outer window bleed, dynamically sizing between **Sign In** (`390px × 460px`) and **Sign Up** (`440px × 620px`).
-   - Dynamically expands and maximizes into the full-screen clinical workstation upon verified login.
-5. **Streamlined Tabular Scans Archive (Removal of Radiograph Column):**
-   - Removed the non-functional radiograph thumbnail column and full-image popover modal from both **PACS Patient Records** (Admin view) and **My Scan History** (User view).
-   - Eliminates broken image placeholders and local filesystem resolution bottlenecks, delivering an uncluttered, high-density tabular view with direct RSNA PDF report export.
-6. **Ergonomic Sidebar & Taskbar Clearance:**
-   - Added generous bottom padding (`pb-6`) to the sidebar user card, ensuring logout controls are never clipped by the Windows taskbar or display borders.
-   - Integrated an explicit, high-visibility **"Log Out"** button with dedicated icon and text label.
-7. **Role-Based Access Control (RBAC):**
-   - **Admin:** Complete access to institution-wide PACS scans, user status management, system activity audit logs, executive Excel database export, and sample image loading buttons.
-   - **User (Clinician / Radiologist):** Focused diagnostic studio, streamlined **My Scan History** (with patient name and national ID omitted for personal records privacy), and a clean **User Dashboard** (study references omitted from recent studies list). Public signups automatically assign the secure `User` role.
-8. **Sample Loading Access Scoping:** Diagnostic sample loading buttons (*"Load Bone Sample"* and *"Load Chest Sample"*) are strictly restricted to Administrators to prevent accidental overwrites during clinical use.
-9. **Exact Date & Timestamp Auditing:** Standardized high-precision timestamps (`YYYY-MM-DD HH:MM:SS` and `DD Mon YYYY, hh:mm:ss AM/PM`) across all user interfaces, database records, RSNA-format clinical PDF reports, and Excel audit logs.
-10. **Immutable Root Administrator & Administrative Self-Deletion Safeguards:**
-    - **Permanent Root Protection (`awaismalik001`):** Multi-tier defense-in-depth security ensures the master administrator (`awaismalik001`) can never be deleted under any circumstances, even by the administrator themselves. Deletion buttons are completely suppressed in the UI and replaced with a prominent `Protected Root Admin` badge; API and database layers enforce hard rejection with HTTP 403 / security violation exceptions.
-    - **Self-Deletion Lockout:** System administrators are strictly blocked from deleting their own active administrative session accounts across both the Admin Dashboard and Staff Profile Management interfaces, safeguarding system continuity and preventing orphaned institutional scan records.
+
+8. **Zero-Background Frameless Startup Lifecycle:**
+   - Frameless transparent window → circular animated splash screen → compact auth card → full-screen workstation upon login.
+   - 5-second countdown calibration timer with instant `Skip →` button on splash screen.
+
+9. **Role-Based Access Control (RBAC):**
+   - **Admin:** Full PACS, user management, audit logs, Excel export, sample loaders.
+   - **User (Clinician):** AI Studio, personal Scan History, User Dashboard, Profile. Patient names hidden from personal history for privacy.
+
+10. **Immutable Root Administrator Protection:**
+    - `awaismalik001` permanently protected from deletion at UI, API, and database layers.
+    - Self-deletion lockout for active administrative session accounts.
+
+11. **Pakistan Healthcare Referral System:**
+    - GPS-anchored hospital and specialist referral system seeded with Pakistani healthcare facilities.
+    - PDF reports reference `Rawalpindi, Pakistan` as the default city location.
 
 ---
 
@@ -107,14 +124,14 @@ The platform provides:
 
 ## 4. Default Credentials
 
-The SQLite PACS database (`database/xray_system.db`) initializes automatically on the first backend run and pre-seeds the administrative account:
+The SQLite PACS database (`database/xray_system.db`) initializes automatically on first backend run:
 
 | Account Type | Username | Password | Role | Access Scope |
 | :--- | :--- | :--- | :--- | :--- |
-| **System Administrator** | `admin` | `Admin123!` | `Admin` | Full PACS, User Controls, Audit Logs, Sample Loaders, Excel Export |
+| **System Administrator** | `awaismalik001` | `Admin123!` | `Admin` | Full PACS, User Controls, Audit Logs, Sample Loaders, Excel Export |
 | **Clinician / Radiologist** | *Via Sign Up* | *User Defined* | `User` | AI Studio, Personal Scan History, User Dashboard, Profile |
 
-> **Security Note:** Default administrator credentials should be updated immediately in production environments via the **Profile Management** interface.
+> **Security Note:** Change the default administrator password immediately in production via the **Profile Management** interface. The `awaismalik001` account is permanently protected and cannot be deleted.
 
 ---
 
@@ -125,7 +142,7 @@ The SQLite PACS database (`database/xray_system.db`) initializes automatically o
 - **REST Framework:** FastAPI, Uvicorn, Python-Multipart
 - **Deep Learning:** PyTorch, TorchVision, Ultralytics YOLOv8
 - **Vision Transformers:** Custom Dual-Head `RadiVisionViT` (ViT-B/16)
-- **Generative AI:** `google-genai` (Gemini 3.8 Flash, Gemini 3.5 Flash Lite)
+- **Generative AI:** `google-genai` (Gemini 3.8 Flash, Gemini 3.5 Flash Lite fallback)
 - **Computer Vision:** OpenCV (`cv2`), Pillow (PIL)
 - **Data & Evaluation:** NumPy, Pandas, Scikit-Learn, Matplotlib
 - **Security:** AES-256-GCM (`cryptography`), PBKDF2, bcrypt
@@ -133,10 +150,10 @@ The SQLite PACS database (`database/xray_system.db`) initializes automatically o
 
 ### Frontend & Desktop
 - **Core Library:** React 19, React DOM
-- **Build Tool:** Vite 6
+- **Build Tool:** Vite 8
 - **Desktop Runtime:** Electron 44
 - **Styling:** Tailwind CSS 4, PostCSS, Lucide React Icons
-- **Animation:** Framer Motion, Canvas Confetti
+- **Animation:** Framer Motion
 - **HTTP Client:** Axios
 
 ---
@@ -144,28 +161,27 @@ The SQLite PACS database (`database/xray_system.db`) initializes automatically o
 ## 6. Installation & Setup Guide
 
 ### Prerequisites
-1. **Python:** Version 3.10 or 3.11 installed with 64-bit architecture.
-2. **Node.js:** Version 18+ and `npm` installed.
-3. **Hardware:** Minimum 8 GB RAM (16 GB recommended). GPU acceleration (CUDA) supported if PyTorch CUDA is installed; operates seamlessly on CPU.
+1. **Python:** Version 3.10 or 3.11 (64-bit).
+2. **Node.js:** Version 18+ with `npm`.
+3. **Hardware:** Minimum 8 GB RAM (16 GB recommended). GPU acceleration (CUDA) supported; operates fully on CPU.
 
 ---
 
 ### Step 1: Clone Repository & Python Environment
 
 ```bash
-# Navigate to the project directory
 cd "d:/My Projects/RadiVision AI"
 
 # Create and activate a Python virtual environment
 python -m venv venv
 
-# Windows (PowerShell / Command Prompt)
+# Windows (PowerShell)
 venv\Scripts\activate
 
 # Linux / macOS
 source venv/bin/activate
 
-# Upgrade pip and install dependencies
+# Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
@@ -174,22 +190,25 @@ pip install -r requirements.txt
 
 ### Step 2: Configure Environment Variables
 
-Create or update the `.env` file in the project root:
+Create `.env` in the project root:
 
 ```env
 # Google Gemini API Key (Multimodal AI Cross-Verification)
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# Google Maps / Places API Key (Optional: Dynamic Healthcare Referrals)
+# Google Maps / Places API Key (Dynamic Healthcare Referrals)
 GOOGLE_MAPS_API_KEY=your_google_maps_key_here
 
-# AES-256 Key for Database Encryption at Rest (32 bytes base64 encoded or string)
-AES_SECRET_KEY=k2W8yD9qX1mP5rL3vN7tJ4bF0zC6sH8aQ2wE4rT6yU8=
+# AES-256 Encryption Key (32-byte base64 or plain string)
+# IMPORTANT: Run database/fix_patient_encryption.py if you change this key
+AES_SECRET_KEY=your_base64_aes_key_here
 
 # Server Configuration
 HOST=127.0.0.1
 PORT=8000
 ```
+
+> **Key Rotation:** If you change `AES_SECRET_KEY` after patient data has been inserted, run `python database/fix_patient_encryption.py` to re-encrypt all records with the new key.
 
 ---
 
@@ -208,106 +227,59 @@ cd ..
 
 ### Option A: One-Click Desktop Launcher (Fastest)
 
-From Windows File Explorer or PowerShell / CMD at the project root, run:
 ```cmd
 .\launch_desktop_app.bat
 ```
-*This automated script boots the FastAPI AI backend in the background and launches the frameless Electron desktop workstation.*
 
 ---
 
-### Option B: Launching in Visual Studio / VS Code
+### Option B: Manual Multi-Terminal Launch
 
-To run the application inside **Visual Studio** or **Visual Studio Code**:
+**Terminal 1 — FastAPI Backend:**
+```bash
+python server.py
+```
+*Backend starts at `http://127.0.0.1:8000`.*
 
-1. Open the project root folder in VS Code / Visual Studio (`File > Open Folder... > d:\My Projects\RadiVision AI`).
-2. Open an integrated terminal (`Ctrl + ~` or ``Ctrl + ` ``).
-3. Run the automated desktop launcher:
-   ```powershell
-   .\launch_desktop_app.bat
-   ```
-   *Alternatively, run in two separate split terminals:*
-   - **Terminal 1 (Backend Deep Learning Engine):**
-     ```powershell
-     python server.py
-     ```
-   - **Terminal 2 (Frontend Desktop Application):**
-     ```powershell
-     cd frontend
-     npm run electron
-     ```
+**Terminal 2 — Electron Desktop App:**
+```bash
+cd frontend
+npm run electron
+```
 
 ---
 
-### Option C: Manual Multi-Terminal Desktop Launch
+### Option C: Web Browser Mode
 
-1. **Start the FastAPI Backend Service:**
-   ```bash
-   # From the project root with venv activated
-   python server.py
-   ```
-   *The backend starts at `http://127.0.0.1:8000`.*
+```bash
+python server.py
+```
+Open `http://127.0.0.1:8000` in any browser.
 
-2. **Launch the Electron Native Workstation:**
-   ```bash
-   # In a second terminal window
-   cd frontend
-   npm run electron
-   ```
-   *The application opens with the compact circular splash screen, transitions into the compact authentication window, and expands to full screen upon login.*
-
----
-
-### Option D: Web Workstation (Browser Mode)
-
-1. **Start the FastAPI Backend Service:**
-   ```bash
-   python server.py
-   ```
-
-2. **Start the Vite Frontend Development Server:**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   *Access the application in your browser at `http://localhost:5173`.*
-
-> **Production Note:** The FastAPI backend automatically serves the pre-built frontend from `frontend/dist`. You can access the complete application directly at `http://127.0.0.1:8000` without running Vite if you have executed `npm run build`.
+> **Production Note:** The FastAPI backend serves the pre-built React frontend from `frontend/dist` automatically. No Vite dev server needed in production.
 
 ---
 
 ## 8. Clinical Workflows & User Roles
 
-### A. AI Diagnostics Studio
-- **DICOM & Image Ingestion:** Accepts DICOM (`.dcm`), PNG, JPG, and WEBP formats.
-- **Interactive Modality Toggle:** Automatically selects Chest or Bone with manual override capabilities.
-- **Admin-Exclusive Sample Loaders:** Administrators can instantly load verified Chest Pneumonia or Bone Fracture reference scans for quality control and demonstrations.
-- **Visual Explainability (Grad-CAM):** Interactive toggle enables high-resolution spatial heatmap overlays showing focal consolidations or cortical disruptions with bounding coordinates.
-- **Multimodal Consensus Card:** Displays the primary model finding alongside the **Gemini 3.8 Flash** verification score, concordance status, clinical rationale, and clinical urgency indicator.
-- **One-Click RSNA PDF Generation:** Downloads a clinical report complete with patient demographics, image viewports, Grad-CAM heatmaps, diagnosis, and local healthcare referrals.
+### A. AI Diagnostic Studio
+- **Image Ingestion:** Accepts PNG, JPG, WEBP, and DICOM exports.
+- **Modality Toggle:** Chest (Pneumonia) or Bone (Fractures) with admin-exclusive sample loaders.
+- **Grad-CAM Visualization:** High-resolution spatial heatmap overlays with bounding box coordinates.
+- **Gemini Consensus Card:** Primary finding + Gemini cross-verification score, concordance status, clinical urgency.
+- **RSNA PDF Report:** One-click clinical report with demographics, scan image, Grad-CAM, and hospital referrals anchored to `Rawalpindi, Pakistan`.
 
 ### B. User Dashboard & My Scan History
-- **Personal Scan History:** Clinicians can search, filter, and review all previous scans performed under their account.
-- **Streamlined Tabular Display:** High-density clinical table without broken image placeholder latency:
-  - **Modality** (`Chest` / `Bone`)
-  - **ViT Diagnostic Finding** (`Normal`, `Pneumonia`, `Fracture`)
-  - **Confidence** (`95.0%`)
-  - **Date & Timestamp** (`2026-09-17 13:30:15`)
-  - **Action** (Direct RSNA PDF export)
-- **Privacy Protection:** Patient Name and National ID columns are omitted to preserve patient privacy in personal clinician views.
-- **Recent Clinical Studies:** Displays recent triage activity with clean, uncluttered columns (study reference identifiers removed for regular users).
+- Personal scan archive with modality filter and diagnosis search.
+- **Privacy:** Patient Name and National ID omitted from personal history.
+- **Compact Prediction Badges:** Long AI predictions shortened in the UI (e.g. `"FRACTURE DETECTED"` instead of `"FRACTURE DETECTED (Multimodal AI Escalation)"`). Full text visible on hover.
+- Direct RSNA PDF export per scan row.
 
 ### C. Administrator Management Console
-- **PACS Patient Records:** Comprehensive institutional repository displaying all patient records:
-  - **Patient / National ID** (`Patient Name` + `MRN/Contact`)
-  - **Modality** (`Chest` / `Bone`)
-  - **ViT Diagnostic Finding** (`Normal`, `Pneumonia`, `Fracture`)
-  - **Confidence** (`95.0%`)
-  - **Date & Timestamp** (`2026-09-17 13:30:15`)
-  - **Action** (Direct RSNA PDF export)
-- **User Administration:** Activate or deactivate user accounts, modify roles between `User` and `Admin`, and review clinician activity.
-- **Security Audit Logs:** Complete chronological trail of logins, scans, report downloads, and configuration changes with exact timestamps.
-- **Executive Excel Export:** Single-click generation of a 3-sheet `.xlsx` workbook containing PACS patient records, audit trails, and triage analytics.
+- **PACS Patient Records:** Institution-wide scan archive with decrypted patient names, demographics, modality, diagnosis, confidence, and timestamp.
+- **User Administration:** Create, activate/deactivate, and delete user accounts (with root admin protection).
+- **Activity Audit Logs:** Chronological trail of all login, scan, export, and credential events.
+- **Excel Export:** 3-sheet `.xlsx` workbook — PACS records, audit trail, analytics.
 
 ---
 
@@ -315,15 +287,10 @@ To run the application inside **Visual Studio** or **Visual Studio Code**:
 
 | Modality / Task | Architecture | Primary Metric | Clinical Benchmark |
 | :--- | :--- | :--- | :--- |
-| **Chest Pneumonia** | Vision Transformer (ViT-B/16) + MobileNetV2 | **90.72%** Test Accuracy | Balanced sensitivity across bacterial and viral consolidations |
-| **Bone Fracture** | Vision Transformer (ViT-B/16) + YOLOv8 | **91.40%** Accuracy / **0.9691** AUC | Precise localization across wrist, arm, leg, and ankle fractures |
-| **Modality Triage** | Dual-Class Convolutional Neural Network | **99.20%** Accuracy | Zero-latency separation of chest and skeletal radiographs |
-| **Multimodal Co-Pilot** | Google Gemini 3.8 Flash (+ 3.5 Lite Fallback) | **100%** Consensus Validation | Second-opinion review, clinical impression, false-negative escalation |
-
-### Dual Inference Engine
-The system includes a dual-inference mechanism:
-1. **Production Mode:** Loads trained weights (`.pt` and `.h5` files in `model/`) directly into PyTorch/TensorFlow.
-2. **Clinical Simulation Mode:** If weights are not found on disk, the system engages a clinically calibrated simulation engine. This enables full end-to-end interface testing, bounding box rendering, report compilation, and database persistence without requiring long initial training sessions.
+| **Chest Pneumonia** | ViT-B/16 + MobileNetV2 | **90.72%** Test Accuracy | 95.38% Sensitivity |
+| **Bone Fracture** | ViT-B/16 + YOLOv8 | **91.40%** Accuracy / **0.9691** AUC | 90.45% Sensitivity |
+| **Modality Triage** | Dual-Class CNN | **99.20%** Accuracy | Zero-latency chest/bone separation |
+| **AI Co-Pilot** | Gemini 3.8 Flash (+ 3.5 Lite fallback) | **100%** Consensus Coverage | Second-opinion, ICD-10, urgency flag |
 
 ---
 
@@ -333,100 +300,108 @@ The system includes a dual-inference mechanism:
 RadiVision AI/
 ├── app/                              # Backend application modules
 │   ├── auth.py                       # User authentication, PBKDF2/bcrypt, sessions
-│   ├── database.py                   # SQLite 3NF schema, CRUD operations, query isolation
+│   ├── database.py                   # SQLite 3NF schema, CRUD, role-isolated queries
 │   ├── domain_shift_augmentation.py  # Phase 3: Domain Shift Web Degradation Generator
 │   ├── encryption.py                 # AES-256-GCM authenticated field-level encryption
 │   ├── excel_export.py               # 3-Sheet clinical & audit Excel workbook generator
-│   ├── gemini_service.py             # Gemini 3.8 Flash & 3.5 Flash Lite API integration
-│   ├── hospital_referral.py          # GPS hospital & specialist recommendation engine
+│   ├── gemini_service.py             # Gemini 3.8 Flash & 3.5 Lite API integration
+│   ├── hospital_referral.py          # Pakistan GPS hospital & specialist referral engine
 │   ├── model_engine.py               # Unified deep learning inference manager
-│   ├── preprocessing.py              # Phase 2: CLAHE contrast & 224x224 standardization
-│   ├── report_generator.py           # Pixel-perfect RSNA clinical PDF report compiler
+│   ├── preprocessing.py              # Phase 2: CLAHE contrast & 224×224 standardization
+│   ├── report_generator.py           # RSNA-compliant clinical PDF report generator
 │   ├── vit_model.py                  # Dual-head Vision Transformer (ViT-B/16) engine
 │   └── bone_gradcam.py               # Grad-CAM spatial activation mapping
 │
 ├── database/                         # Persistent database storage
-│   └── xray_system.db                # SQLite database file (auto-created on first run)
+│   ├── xray_system.db                # SQLite database (auto-created on first run)
+│   ├── dummy_seed.py                 # Synthetic demo data seeder (de-identified)
+│   └── fix_patient_encryption.py     # AES key migration utility (run after key rotation)
 │
-├── frontend/                         # Modern React + Vite + Electron frontend
+├── frontend/                         # React + Vite + Electron frontend
 │   ├── electron/
-│   │   ├── main.cjs                  # Electron main process (window lifecycle & resizing)
-│   │   └── preload.cjs               # Secure IPC bridge for window controls
+│   │   ├── main.cjs                  # Electron main process (window lifecycle & sizing)
+│   │   └── preload.cjs               # Secure IPC bridge for native window controls
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── AdminDashboard.jsx    # Institutional PACS, user management, audit logs
-│   │   │   ├── AuthModal.jsx         # Compact login & signup dialog
+│   │   │   ├── AdminDashboard.jsx    # Institutional PACS, user mgmt, audit logs
+│   │   │   ├── AuthModal.jsx         # Compact login & signup dialog (with init message)
 │   │   │   ├── DiagnosticStudio.jsx  # Core AI scanning studio, Grad-CAM, Gemini cards
-│   │   │   ├── HealthcareNetwork.jsx # Interactive hospital & specialist directory
+│   │   │   ├── HealthcareNetwork.jsx # Hospital & specialist referral directory
 │   │   │   ├── NeuralTelemetry.jsx   # Model architecture, ROC curves, confusion matrices
-│   │   │   ├── PatientHistory.jsx    # Scan archive (privacy-tailored for User vs Admin)
-│   │   │   ├── ProfileManagement.jsx # Clinician profile & password settings
-│   │   │   ├── Sidebar.jsx           # Dark medical workstation navigation
-│   │   │   ├── SplashScreen.jsx      # Compact circular animated splash screen
+│   │   │   ├── PatientHistory.jsx    # Scan archive (privacy-tailored per role)
+│   │   │   ├── ProfileManagement.jsx # Clinician profile & admin credential management
+│   │   │   ├── Sidebar.jsx           # Dark medical workstation sidebar navigation
+│   │   │   ├── SplashScreen.jsx      # Circular animated splash (5-sec countdown)
 │   │   │   └── UserDashboard.jsx     # Clinician overview & quick scan launcher
 │   │   ├── App.jsx                   # Application state & window mode coordinator
 │   │   └── main.jsx                  # React DOM entry point
-│   ├── package.json                  # Frontend dependencies and run scripts
-│   └── vite.config.js                # Vite build and server configuration
+│   ├── package.json                  # Frontend dependencies and build scripts
+│   └── vite.config.js                # Vite build configuration
 │
-├── model/                            # Model training scripts and pre-trained weights
-│   ├── chest/                        # Chest pneumonia model weights and training pipeline
+├── model/                            # Pre-trained model weights
+│   ├── chest/                        # Chest pneumonia model weights
 │   ├── bone/                         # Bone fracture YOLOv8 / PyTorch weights
 │   ├── type_classifier/              # Modality triage classifier
-│   └── vit/                          # Vision Transformer calibrated weights
+│   └── vit/                          # Vision Transformer weights (328.9 MB)
 │
-├── reports/                          # Auto-generated clinical PDF reports and Excel exports
-├── uploads/                          # Temporary encrypted storage for uploaded scans
+├── reports/                          # Auto-generated clinical PDF reports
+├── uploads/                          # Temporary storage for uploaded scans
+├── build_desktop.py                  # Full end-to-end desktop packaging pipeline
+├── build_backend.py                  # PyInstaller backend compilation script
 ├── launch_desktop_app.bat            # One-click native desktop launcher
 ├── server.py                         # FastAPI REST API bridge on port 8000
 ├── requirements.txt                  # Python dependencies manifest
-├── .env                              # Environment variables (API keys, secrets)
-└── README.md                         # System documentation
+├── .env                              # Environment variables (NEVER commit to git)
+└── README.md                         # This documentation
 ```
 
 ---
 
 ## 11. Standalone Desktop Distribution & Setup Installers
 
-RadiVision AI provides two packaging options for immediate deployment:
+### Option 1: Windows Setup Installer (`RadiVision_AI_Setup.exe`)
+- Single executable NSIS installer built via Electron-Builder.
+- Auto-installs to `AppData\Local\Programs\RadiVision AI`.
+- Creates Start Menu + optional Desktop shortcut.
+- Bundles complete FastAPI AI engine, PyTorch ViT weights, SQLite PACS, and Electron frontend.
+- Uninstalls cleanly via Windows *Add or Remove Programs*.
 
-### Option 1: Standalone Single Setup Installer (`RadiVision_AI_Setup.exe`)
-- **Format:** Single executable Windows installer built via Electron-Builder NSIS (and Inno Setup).
-- **Behavior:**
-  - Automatically installs RadiVision AI to the local machine (`AppData\Local\Programs\RadiVision AI` or `Program Files`).
-  - Creates Start Menu shortcuts and an optional Desktop shortcut.
-  - Bundles the complete pre-compiled FastAPI AI engine, PyTorch Vision Transformer weights, SQLite PACS database, and modern Electron frontend.
-  - Uninstallation cleanly removes all program binaries via Windows *Add or Remove Programs*.
+### Option 2: Portable Workstation (`RadiVision-AI-Workstation.zip`)
+- Zero-installation required. Copy to any USB drive or PC.
+- Extract and double-click `RadiVision AI.exe` to run immediately.
 
-### Option 2: Portable Clinical Workstation Archive (`RadiVision-AI-Workstation.zip`)
-- **Format:** Pre-packaged portable directory archive (`.zip`).
-- **Behavior:**
-  - Zero-installation needed. Clinicians can copy the folder to any USB drive, workstation PC, or share via WhatsApp / cloud drive.
-  - Double-click `RadiVision AI.exe` inside the unzipped directory to run immediately.
+> **Note on `.env` in installed app:** The `AES_SECRET_KEY`, `GEMINI_API_KEY`, and `GOOGLE_MAPS_API_KEY` are loaded from `.env` inside the app's `resources/` path when installed. A secure fallback AES key is built-in for machines without a `.env` file.
 
-### Building the Distribution Packages
-To rebuild both the workstation archive and setup installer from source:
-```cmd
+### Building from Source
+```powershell
+# Full rebuild (backend + frontend + installer + portable zip)
 python build_desktop.py
+
+# Skip backend recompile if server.exe already exists (fast rebuild)
+$env:SKIP_BACKEND='1'; python build_desktop.py
 ```
-*Outputs:*
-1. `RadiVision_AI_Setup.exe` (Root directory)
-2. `RadiVision-AI-Workstation.zip` (Root directory)
+
+*Outputs at project root:*
+1. `RadiVision_AI_Setup.exe` — Windows NSIS installer
+2. `RadiVision-AI-Workstation.zip` — Portable zip archive
+3. `RadiVision-AI-Workstation/` — Unpacked portable directory
 
 ---
 
 ## 12. Security, Privacy & Regulatory Compliance
 
-- **Authentication Security:** Passwords hashed with bcrypt / PBKDF2 with salt. Brute-force rate limiting blocks repeated failed attempts.
-- **Data Protection at Rest:** Sensitive patient demographics and identifiers are encrypted using AES-256-GCM.
-- **Clean Audit Trail:** All administrative, diagnostic, and export operations are logged to the database with exact UTC timestamps.
-- **Privacy by Design:** Regular clinicians only access scans initiated under their authorized credentials. Identification tags are excluded from standard user scan histories.
-- **Auto-Logout Protection:** Desktop application dispatches a secure session termination event upon window closure.
+- **Authentication:** Passwords hashed with bcrypt/PBKDF2 with salt. Repeated failed login attempts are rate-limited.
+- **Data Protection at Rest:** Patient name and contact fields encrypted with AES-256-GCM. Decrypted only at API response time in memory; ciphertext stored in SQLite.
+- **Key Rotation:** Run `python database/fix_patient_encryption.py` after any `AES_SECRET_KEY` change to re-encrypt all existing records.
+- **Audit Trail:** All administrative, diagnostic, and export operations logged with exact UTC timestamps.
+- **Privacy by Design:** Regular clinicians access only their own scans. Patient identifiers hidden from standard user views.
+- **Auto-Logout:** Desktop app triggers session termination on window close.
+- **Root Admin Lock:** `awaismalik001` cannot be deleted or demoted at any layer (UI, API, database).
 
 ---
 
 ## 13. License & Medical Disclaimer
 
-**Medical Disclaimer:** RadiVision AI is developed for diagnostic support, quality assurance, and research triage. It is intended to augment, not replace, the independent clinical judgment of board-certified radiologists and medical practitioners.
+**Medical Disclaimer:** RadiVision AI is developed for diagnostic support, quality assurance, and research triage. It is intended to **augment, not replace**, the independent clinical judgment of board-certified radiologists and medical practitioners. Always seek professional clinical validation before any treatment decision.
 
-*Designed and engineered for high-precision diagnostic radiology.*
+*Designed and engineered for high-precision diagnostic radiology — Pakistan & beyond.*
