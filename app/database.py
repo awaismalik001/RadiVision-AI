@@ -475,6 +475,8 @@ class DatabaseManager:
                 query += " WHERE s.user_id = ?"
                 params.append(user_id)
             query += " ORDER BY s.scan_date DESC LIMIT ?;"
+            params.append(limit)
+            cursor.execute(query, params)
             rows = [dict(row) for row in cursor.fetchall()]
             for r in rows:
                 if "patient_name" in r:
