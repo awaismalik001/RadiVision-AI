@@ -107,7 +107,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "RadiVision AI"
+      "shortcutName": "RadiVision AI",
+      "artifactName": "RadiVision_AI_Setup.${ext}"
     }
   }
 }

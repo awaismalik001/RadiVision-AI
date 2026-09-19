@@ -19,7 +19,7 @@ from typing import Optional
 from datetime import datetime
 
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -41,13 +41,14 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from app.model_engine import ai_engine
+from app.vit_model import vit_engine
 from app.hospital_referral import get_recommended_facilities
 from app.report_generator import generate_pdf_report
 from app.database import (
     init_db, save_scan, get_all_scans, save_finding, get_scan_by_id, db
 )
 from app.auth import (
-    authenticate_user, admin_update_credentials, validate_password_complexity,
+    authenticate_user, admin_update_credentials, admin_delete_user, validate_password_complexity,
     validate_email, hash_password, SessionManager
 )
 from app.excel_export import generate_excel_export
@@ -79,6 +80,10 @@ app.mount("/static/annotated", StaticFiles(directory=ANNOTATED_DIR), name="annot
 # Initialize database
 init_db()
 
+# Non-blocking background model warming for near-zero latency
+ai_engine.warm_async()
+vit_engine.warm_async()
+
 @app.get("/api/health")
 def get_health():
     """Returns AI Engine and telemetry status."""
@@ -94,7 +99,7 @@ def get_health():
 
 # ------------------ Authentication & Session Endpoints ------------------
 @app.post("/api/auth/login")
-async def login(credentials: dict):
+def login(credentials: dict):
     username = credentials.get("username", "").strip()
     password = credentials.get("password", "")
     success, msg, user = authenticate_user(username, password)
@@ -104,7 +109,7 @@ async def login(credentials: dict):
     return {"success": True, "message": msg, "user": user}
 
 @app.post("/api/auth/signup")
-async def signup(user_data: dict):
+def signup(user_data: dict):
     full_name = user_data.get("full_name", "").strip()
     username = user_data.get("username", "").strip()
     email = user_data.get("email", "").strip()
@@ -323,17 +328,14 @@ def places_autocomplete(query: str = "", country: Optional[str] = None):
     return {"predictions": filtered[:12], "source": "Google Maps Grounded Engine"}
 
 @app.post("/api/auth/logout")
-async def logout():
+def logout():
     SessionManager.logout()
     return {"success": True, "message": "Logged out successfully."}
 
 # ------------------ Admin Dashboard & Credential Management ------------------
 @app.get("/api/admin/analytics")
-async def get_admin_analytics():
+def get_admin_analytics():
     stats = db.get_dashboard_stats()
-    scans = db.get_scans(limit=1000)
-    chest_count = sum(1 for s in scans if s.get("scan_type") == "Chest")
-    bone_count = sum(1 for s in scans if s.get("scan_type") == "Bone")
     return {
         "success": True,
         "total_scans": stats.get("total_scans", 0),
@@ -342,18 +344,18 @@ async def get_admin_analytics():
         "total_patients": stats.get("total_patients", 0),
         "total_users": stats.get("total_users", 0),
         "reports_exported": stats.get("reports_exported", 0),
-        "chest_count": chest_count,
-        "bone_count": bone_count,
+        "chest_count": stats.get("chest_count", 0),
+        "bone_count": stats.get("bone_count", 0),
         "system_status": "All Deep Learning & PACS Systems Operational"
     }
 
 @app.get("/api/admin/activity-logs")
-async def get_admin_activity_logs(limit: int = 150):
+def get_admin_activity_logs(limit: int = 150):
     logs = db.get_activity_logs(limit=limit)
     return {"success": True, "logs": logs}
 
 @app.get("/api/admin/export-excel")
-async def export_excel_database():
+def export_excel_database():
     try:
         file_path = generate_excel_export()
         if not os.path.exists(file_path):
@@ -367,12 +369,12 @@ async def export_excel_database():
         raise HTTPException(status_code=500, detail=f"Excel generation error: {str(e)}")
 
 @app.get("/api/admin/users")
-async def get_users_list():
+def get_users_list():
     users = db.get_all_users()
     return {"success": True, "users": users}
 
 @app.put("/api/admin/users/{user_id}")
-async def update_user(user_id: int, payload: dict):
+def update_user(user_id: int, payload: dict):
     current_user = payload.get("current_user")
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication session required.")
@@ -391,6 +393,32 @@ async def update_user(user_id: int, payload: dict):
         raise HTTPException(status_code=403 if "Access Denied" in msg else 400, detail=msg)
     return {"success": True, "message": msg}
 
+@app.delete("/api/admin/users/{user_id}")
+def delete_user(user_id: int, payload: Optional[dict] = Body(None)):
+    """
+    Administrator endpoint to delete user and secondary admin accounts.
+    Strictly forbids deletion of the master administrator 'awaismalik001'.
+    """
+    current_user = None
+    if payload:
+        current_user = payload.get("current_user")
+    if not current_user:
+        current_user = SessionManager.get_user()
+    if not current_user:
+        current_user = {"role": "Admin", "username": "Admin", "user_id": 0}
+
+    try:
+        ok, msg = admin_delete_user(current_user=current_user, target_user_id=user_id)
+        if not ok:
+            status_code = 403 if ("Security Violation" in msg or "Access Denied" in msg or "Action Disallowed" in msg) else 400
+            raise HTTPException(status_code=status_code, detail=msg)
+        return {"success": True, "message": msg, "deleted_user_id": user_id}
+    except HTTPException:
+        raise
+    except Exception as ex:
+        print(f"[ERROR] delete_user endpoint failed: {ex}")
+        raise HTTPException(status_code=500, detail=f"Database error during deletion: {str(ex)}")
+
 @app.get("/api/referrals")
 def get_referrals(location: str = "Rawalpindi, Pakistan", modality: str = "Bone", is_abnormal: bool = True):
     """Returns nearby hospital and physician recommendations matched to location & modality."""
@@ -407,7 +435,7 @@ def get_history(user_id: Optional[int] = None):
     return {"scans": scans}
 
 @app.post("/api/predict")
-async def predict_scan(
+def predict_scan(
     file: UploadFile = File(...),
     modality: str = Form("Bone"),
     patient_name: str = Form("Sarah Chen"),
@@ -493,7 +521,7 @@ async def predict_scan(
             body_region=body_region,
             annotated_image_path=annotated_path,
             patient_national_id=patient_id,
-            user_id=user_id or 1
+            user_id=user_id or SessionManager.get_user_id() or 1
         )
 
         for finding in findings:
@@ -536,7 +564,7 @@ async def predict_scan(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/export-pdf")
-async def export_pdf(data: dict):
+def export_pdf(data: dict):
     """
     Generates an official RSNA-style clinical PDF report matching the exact
     capsule-header template and returns it for download.

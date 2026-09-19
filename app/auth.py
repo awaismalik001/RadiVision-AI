@@ -254,3 +254,37 @@ def admin_update_credentials(
 
     return True, f"Credentials for user #{target_user_id} updated successfully by Administrator."
 
+def admin_delete_user(current_user: Dict[str, Any], target_user_id: int) -> Tuple[bool, str]:
+    """
+    Deletes a user or admin account with strict protection for master administrator 'awaismalik001'.
+    """
+    from app.database import db
+
+    if not current_user or current_user.get("role") != "Admin":
+        return False, "Access Denied: Account deletion is strictly restricted to System Administrators."
+
+    target_user = db.get_user_by_id(target_user_id)
+    if not target_user:
+        return False, f"Target user ID #{target_user_id} does not exist."
+
+    target_username = (target_user.get("username") or "").strip().lower()
+    if target_username == "awaismalik001":
+        return False, "Security Violation: Master Administrator 'awaismalik001' is permanently protected and cannot be deleted under any circumstances."
+
+    curr_user_id = current_user.get("user_id")
+    curr_username = (current_user.get("username") or "").strip().lower()
+    if (curr_user_id is not None and int(curr_user_id) == int(target_user_id)) or (curr_username and curr_username == target_username):
+        return False, "Action Disallowed: You cannot delete your own active administrative session."
+
+    ok, msg = db.delete_user(target_user_id)
+    if ok:
+        admin_name = current_user.get("username", "Admin")
+        db.log_activity(
+            current_user.get("user_id"),
+            admin_name,
+            "USER_DELETED",
+            f"Admin '{admin_name}' deleted {target_user.get('role')} account '{target_username}' (ID #{target_user_id})."
+        )
+
+    return ok, msg
+

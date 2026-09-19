@@ -14,6 +14,7 @@ foolproof demonstration.
 
 import os
 import random
+import threading
 from typing import Dict, Any, Tuple, List
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -67,16 +68,41 @@ class ModelEngine:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(ModelEngine, cls).__new__(cls)
-            cls._instance._init_models()
+            cls._instance._init_state()
         return cls._instance
 
-    def _init_models(self):
-        """Pre-loads models into memory if available."""
+    def _init_state(self):
+        """Initializes empty state for fast server boot."""
         self.type_model = None
         self.chest_model = None
         self.chest_model_pt = None
         self.bone_model = None
         self.bone_model_pt = None
+        self._loaded = False
+        self._loading = False
+        self._lock = threading.Lock()
+
+    def _load_all_models(self):
+        with self._lock:
+            if self._loaded:
+                return
+            self._init_models()
+            self._loaded = True
+            self._loading = False
+
+    def warm_async(self):
+        """Loads models asynchronously in a background thread."""
+        if not self._loaded and not self._loading:
+            self._loading = True
+            threading.Thread(target=self._load_all_models, daemon=True).start()
+
+    def ensure_loaded(self):
+        """Ensures all neural network models are ready before inference."""
+        if not self._loaded:
+            self._load_all_models()
+
+    def _init_models(self):
+        """Pre-loads models into memory if available."""
 
         # Load PyTorch Chest Model
         if HAS_TORCH and os.path.exists(CHEST_MODEL_PT):
@@ -149,6 +175,7 @@ class ModelEngine:
         Classifies the incoming image as 'Chest' or 'Bone'.
         Returns (predicted_modality, confidence_score).
         """
+        self.ensure_loaded()
         if self.type_model is not None and HAS_TF:
             try:
                 img = k_image.load_img(image_path, target_size=(224, 224))
@@ -178,6 +205,7 @@ class ModelEngine:
     # ----------------- 2. Chest Pneumonia Classification -----------------
     def predict_chest(self, image_path: str) -> Dict[str, Any]:
         """Performs pneumonia classification on chest radiographs."""
+        self.ensure_loaded()
         # 1. PyTorch Inference
         if getattr(self, "chest_model_pt", None) is not None and HAS_TORCH:
             try:
@@ -350,6 +378,7 @@ class ModelEngine:
     # ----------------- 3. Bone Fracture Object Detection -----------------
     def predict_bone(self, image_path: str) -> Dict[str, Any]:
         """Detects and localizes fractures with anatomical region tagging."""
+        self.ensure_loaded()
         # 1. PyTorch Deep Learning Inference with Grad-CAM Localization
         if getattr(self, "bone_model_pt", None) is not None and HAS_TORCH:
             try:

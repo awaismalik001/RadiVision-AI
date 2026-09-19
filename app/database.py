@@ -9,7 +9,7 @@ and activity audit logging.
 import os
 import sqlite3
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from app.encryption import pacs_cipher
 
 DB_DIR = os.path.join(os.environ.get("RADIVISION_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "database")
@@ -77,7 +77,7 @@ class DatabaseManager:
                 CREATE TABLE IF NOT EXISTS scans (
                     scan_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     patient_id INTEGER NOT NULL,
-                    user_id INTEGER NOT NULL,
+                    user_id INTEGER,
                     scan_type TEXT CHECK(scan_type IN ('Chest', 'Bone')) NOT NULL,
                     body_region TEXT,
                     prediction TEXT NOT NULL,
@@ -218,6 +218,45 @@ class DatabaseManager:
                 cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE user_id = ?;", tuple(params))
                 conn.commit()
 
+    def delete_user(self, user_id: int) -> Tuple[bool, str]:
+        """
+        Permanently removes a user or admin account from the SQLite PACS database.
+        Strictly prevents deletion of the master administrator account 'awaismalik001'.
+        Safely reassigns clinical scans to the system administrator to maintain PACS records continuity.
+        """
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return False, "User account not found."
+
+        username = (user.get("username") or "").strip().lower()
+        if username == "awaismalik001":
+            return False, "Security Violation: Master Administrator 'awaismalik001' is permanently protected and cannot be deleted."
+
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Find primary administrator to inherit clinical scans
+                cursor.execute("SELECT user_id FROM users WHERE LOWER(username) = 'awaismalik001' LIMIT 1;")
+                admin_row = cursor.fetchone()
+                if not admin_row:
+                    cursor.execute("SELECT user_id FROM users WHERE role = 'Admin' AND user_id != ? LIMIT 1;", (user_id,))
+                    admin_row = cursor.fetchone()
+
+                fallback_admin_id = admin_row["user_id"] if admin_row else 1
+
+                # Reassign scans to administrator to avoid FK constraint conflict & prevent clinical telemetry loss
+                cursor.execute("UPDATE scans SET user_id = ? WHERE user_id = ?;", (fallback_admin_id, user_id))
+                cursor.execute("UPDATE activity_logs SET user_id = NULL WHERE user_id = ?;", (user_id,))
+
+                # Delete the target account
+                cursor.execute("DELETE FROM users WHERE user_id = ?;", (user_id,))
+                conn.commit()
+
+            return True, f"User account '{user.get('username')}' was successfully deleted."
+        except Exception as e:
+            return False, f"Failed to delete account from database: {str(e)}"
+
     # ----------------- Patient Management -----------------
     def create_patient(self, name: str, age: int, gender: str, contact: str = "") -> int:
         with self.get_connection() as conn:
@@ -260,6 +299,19 @@ class DatabaseManager:
                     prediction: str, confidence: float, raw_image_path: str, annotated_image_path: Optional[str] = None) -> int:
         with self.get_connection() as conn:
             cursor = conn.cursor()
+            # Validate user_id exists; fallback to default admin or first existing user
+            cursor.execute("SELECT user_id FROM users WHERE user_id = ?;", (user_id,))
+            if not cursor.fetchone():
+                cursor.execute("SELECT user_id FROM users WHERE role = 'Admin' ORDER BY user_id ASC LIMIT 1;")
+                fallback_user = cursor.fetchone()
+                if fallback_user:
+                    user_id = fallback_user[0]
+                else:
+                    cursor.execute("SELECT user_id FROM users ORDER BY user_id ASC LIMIT 1;")
+                    any_user = cursor.fetchone()
+                    if any_user:
+                        user_id = any_user[0]
+
             cursor.execute("""
                 INSERT INTO scans (patient_id, user_id, scan_type, body_region, prediction, confidence, raw_image_path, annotated_image_path)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?);
@@ -388,6 +440,14 @@ class DatabaseManager:
             if reports_exported == 0 and total_scans > 0:
                 reports_exported = total_scans
 
+            chest_where = "WHERE scan_type = 'Chest'" + (" AND user_id = ?" if user_id is not None else "")
+            cursor.execute(f"SELECT COUNT(*) FROM scans {chest_where};", params)
+            chest_count = cursor.fetchone()[0]
+
+            bone_where = "WHERE scan_type = 'Bone'" + (" AND user_id = ?" if user_id is not None else "")
+            cursor.execute(f"SELECT COUNT(*) FROM scans {bone_where};", params)
+            bone_count = cursor.fetchone()[0]
+
             return {
                 "total_scans": total_scans,
                 "abnormal_scans": abnormal_scans,
@@ -395,6 +455,8 @@ class DatabaseManager:
                 "total_patients": total_patients,
                 "total_users": total_users,
                 "reports_exported": reports_exported,
+                "chest_count": chest_count,
+                "bone_count": bone_count,
             }
 
     def get_recent_scans_summary(self, user_id: Optional[int] = None, limit: int = 5) -> List[Dict[str, Any]]:

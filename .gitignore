@@ -1,10 +1,56 @@
-# Environment and secrets
+# =============================================================================
+# RadiVision AI - Comprehensive Production .gitignore
+# Protects sensitive data, clinical records, API secrets, and large binaries.
+# Only dummy configurations and public model assets are committed to Git.
+# =============================================================================
+
+# 1. Environment Secrets & Credentials (Never commit production API keys)
 .env
 .env.local
 .env.*
 !.env.example
 
-# Python
+# 2. SQLite PACS Databases (Contains patient records, PHI, and credentials)
+*.db
+*.sqlite
+*.sqlite3
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+!database/.gitkeep
+!database/dummy_seed.py
+
+# 3. Clinical Diagnostic Outputs, Reports & Patient Radiographs
+runs/
+uploads/*
+!uploads/.gitkeep
+reports/*.pdf
+reports/*.xlsx
+reports/annotated_*
+!reports/.gitkeep
+!reports/domain_shift_samples/
+!reports/standardization_samples/
+!reports/vit_optimization_report.json
+
+# 4. Standalone Desktop Distributables & Binaries (>100 MB per file limit on GitHub)
+RadiVision_AI_Setup.exe
+RadiVision-AI-Workstation.zip
+RadiVision-AI-Workstation/
+model/vit/*.pt
+!model/vit/.gitkeep
+build-server/
+dist-server/
+frontend/dist/
+frontend/dist-electron/
+*.spec
+
+# 5. Logs & System Debug Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 6. Python Environment & Compilation Caches
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,27 +62,6 @@ ENV/
 *.egg-info/
 .pytest_cache/
 
-# Node
+# 7. Node Dependencies & Build Artifacts
 node_modules/
 frontend/node_modules/
-frontend/dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Application output
-runs/
-uploads/*
-!uploads/.gitkeep
-reports/*.pdf
-reports/*.xlsx
-reports/annotated_*
-
-# Databases
-*.sqlite3
-
-# Packaging & Dist
-build-server/
-dist-server/
-frontend/dist-electron/
-*.spec

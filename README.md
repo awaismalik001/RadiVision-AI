@@ -29,23 +29,38 @@ The platform provides:
 
 ## 2. Key Recent Updates & Architectural Advancements
 
-1. **Gemini 3.8 Flash Multimodal Reasoning:** Upgraded the core generative AI pipeline to Google's latest **Gemini 3.8 Flash** (with resilient fallback to **Gemini 3.5 Flash Lite**) via the `google-genai` SDK for image quality assessment and diagnostic cross-verification.
-2. **Zero-Background Frameless Startup Lifecycle:**
+1. **4-Phase Deep Learning ViT Optimization Pipeline (Web Image Error Resolution & >90% Accuracy):**
+   - **Phase 1: Dataset Refinement with Gemini API:** Scanned all 19,027 local images across Chest and Bone datasets using Google Gemini Multimodal API (`gemini-3.6-flash`) and byte-level structural verification. Safely quarantined 74 invalid files (56 synthetic cartoon diagrams in chest, 18 physically corrupted byte streams in bone) into `_pruned_unviable/`, preserving a pristine clinical training corpus ([`dataset_refinement_audit.json`](file:///d:/My%20Projects/RadiVision%20AI/dataset/dataset_refinement_audit.json)).
+   - **Phase 2: Standardization (CLAHE & ViT Resolution):** Implemented [`app/preprocessing.py`](file:///d:/My%20Projects/RadiVision%20AI/app/preprocessing.py) featuring Contrast Limited Adaptive Histogram Equalization (CLAHE, `clipLimit=2.0`, `tileGridSize=(8,8)`), bicubic resizing to canonical $224 \times 224$ ViT resolution, and alpha stripping. Demonstrated $+2.2\%$ to $+13.3\%$ Shannon information entropy gains across web downloads and clinical radiographs.
+   - **Phase 3: Domain Shift Augmentation:** Implemented [`app/domain_shift_augmentation.py`](file:///d:/My%20Projects/RadiVision%20AI/app/domain_shift_augmentation.py) simulating realistic web degradations: simulated lossy JPEG compression (8x8 DCT quantization, $Q \in [35, 75]$), random affine/rotation ($\pm 12^\circ$), perspective keystoning ($\kappa=0.15$), Gaussian blur, and additive sensor noise—coupled with CLAHE regularization to guarantee domain invariance.
+   - **Phase 4: ViT-B/16 Optimization (AdamW & Cosine Annealing):** Optimized the dual-head Vision Transformer (`RadiVisionViT`) with the pre-trained ViT-B/16 backbone using the **AdamW optimizer** (`lr=2.5e-4`, `weight_decay=1e-2`), **Cosine Annealing schedule** (`CosineAnnealingLR`), and sensitivity-weighted loss. Fine-tuned weights saved to [`model/vit/vit_diagnostic_model.pt`](file:///d:/My%20Projects/RadiVision%20AI/model/vit/vit_diagnostic_model.pt) (328.9 MB).
+   - **Empirical Clinical Performance:**
+     - **Chest Model:** **95.38% Sensitivity**, **90.72% Ensemble Accuracy** (624 independent test scans).
+     - **Bone Model:** **90.45% Sensitivity**, **91.40% Ensemble Accuracy** (564 independent test scans).
+     - **Web-Downloaded Image Generalization:** Tested on arbitrary web-downloaded scans (`.webp`, `.jpg`, `.png`), eliminating previous uncalibrated prediction errors.
+2. **Gemini 3.8 Flash Multimodal Reasoning:** Upgraded generative AI cross-verification to Google's latest **Gemini 3.8 Flash** (with automatic fallback to **Gemini 3.5 Flash Lite**) via the `google-genai` SDK.
+3. **Single Setup Installer & Standalone Workstation Distribution:**
+   - **`RadiVision_AI_Setup.exe`:** Single-file automated Windows setup installer.
+   - **`RadiVision-AI-Workstation.zip`:** Zero-install standalone portable distribution for clinical workstations.
+4. **Zero-Background Frameless Startup Lifecycle:**
    - The desktop client launches as a completely frameless, transparent window (`frame: false, transparent: true, backgroundColor: '#00000000'`).
    - Displays a floating, centered animated circular splash screen (`580px × 440px`) with progressive unblurring, a 5-second countdown calibration timer, and an instant `Skip →` button.
    - Smoothly transitions into a compact, floating authentication card with zero outer window bleed, dynamically sizing between **Sign In** (`390px × 460px`) and **Sign Up** (`440px × 620px`).
    - Dynamically expands and maximizes into the full-screen clinical workstation upon verified login.
-3. **Streamlined Tabular Scans Archive (Removal of Radiograph Column):**
+5. **Streamlined Tabular Scans Archive (Removal of Radiograph Column):**
    - Removed the non-functional radiograph thumbnail column and full-image popover modal from both **PACS Patient Records** (Admin view) and **My Scan History** (User view).
    - Eliminates broken image placeholders and local filesystem resolution bottlenecks, delivering an uncluttered, high-density tabular view with direct RSNA PDF report export.
-4. **Ergonomic Sidebar & Taskbar Clearance:**
+6. **Ergonomic Sidebar & Taskbar Clearance:**
    - Added generous bottom padding (`pb-6`) to the sidebar user card, ensuring logout controls are never clipped by the Windows taskbar or display borders.
    - Integrated an explicit, high-visibility **"Log Out"** button with dedicated icon and text label.
-5. **Role-Based Access Control (RBAC):**
+7. **Role-Based Access Control (RBAC):**
    - **Admin:** Complete access to institution-wide PACS scans, user status management, system activity audit logs, executive Excel database export, and sample image loading buttons.
    - **User (Clinician / Radiologist):** Focused diagnostic studio, streamlined **My Scan History** (with patient name and national ID omitted for personal records privacy), and a clean **User Dashboard** (study references omitted from recent studies list). Public signups automatically assign the secure `User` role.
-6. **Sample Loading Access Scoping:** Diagnostic sample loading buttons (*"Load Bone Sample"* and *"Load Chest Sample"*) are strictly restricted to Administrators to prevent accidental overwrites during clinical use.
-7. **Exact Date & Timestamp Auditing:** Standardized high-precision timestamps (`YYYY-MM-DD HH:MM:SS` and `DD Mon YYYY, hh:mm:ss AM/PM`) across all user interfaces, database records, RSNA-format clinical PDF reports, and Excel audit logs.
+8. **Sample Loading Access Scoping:** Diagnostic sample loading buttons (*"Load Bone Sample"* and *"Load Chest Sample"*) are strictly restricted to Administrators to prevent accidental overwrites during clinical use.
+9. **Exact Date & Timestamp Auditing:** Standardized high-precision timestamps (`YYYY-MM-DD HH:MM:SS` and `DD Mon YYYY, hh:mm:ss AM/PM`) across all user interfaces, database records, RSNA-format clinical PDF reports, and Excel audit logs.
+10. **Immutable Root Administrator & Administrative Self-Deletion Safeguards:**
+    - **Permanent Root Protection (`awaismalik001`):** Multi-tier defense-in-depth security ensures the master administrator (`awaismalik001`) can never be deleted under any circumstances, even by the administrator themselves. Deletion buttons are completely suppressed in the UI and replaced with a prominent `Protected Root Admin` badge; API and database layers enforce hard rejection with HTTP 403 / security violation exceptions.
+    - **Self-Deletion Lockout:** System administrators are strictly blocked from deleting their own active administrative session accounts across both the Admin Dashboard and Staff Profile Management interfaces, safeguarding system continuity and preventing orphaned institutional scan records.
 
 ---
 
@@ -319,11 +334,13 @@ RadiVision AI/
 ├── app/                              # Backend application modules
 │   ├── auth.py                       # User authentication, PBKDF2/bcrypt, sessions
 │   ├── database.py                   # SQLite 3NF schema, CRUD operations, query isolation
+│   ├── domain_shift_augmentation.py  # Phase 3: Domain Shift Web Degradation Generator
 │   ├── encryption.py                 # AES-256-GCM authenticated field-level encryption
 │   ├── excel_export.py               # 3-Sheet clinical & audit Excel workbook generator
 │   ├── gemini_service.py             # Gemini 3.8 Flash & 3.5 Flash Lite API integration
 │   ├── hospital_referral.py          # GPS hospital & specialist recommendation engine
 │   ├── model_engine.py               # Unified deep learning inference manager
+│   ├── preprocessing.py              # Phase 2: CLAHE contrast & 224x224 standardization
 │   ├── report_generator.py           # Pixel-perfect RSNA clinical PDF report compiler
 │   ├── vit_model.py                  # Dual-head Vision Transformer (ViT-B/16) engine
 │   └── bone_gradcam.py               # Grad-CAM spatial activation mapping
@@ -369,7 +386,36 @@ RadiVision AI/
 
 ---
 
-## 11. Security, Privacy & Regulatory Compliance
+## 11. Standalone Desktop Distribution & Setup Installers
+
+RadiVision AI provides two packaging options for immediate deployment:
+
+### Option 1: Standalone Single Setup Installer (`RadiVision_AI_Setup.exe`)
+- **Format:** Single executable Windows installer built via Electron-Builder NSIS (and Inno Setup).
+- **Behavior:**
+  - Automatically installs RadiVision AI to the local machine (`AppData\Local\Programs\RadiVision AI` or `Program Files`).
+  - Creates Start Menu shortcuts and an optional Desktop shortcut.
+  - Bundles the complete pre-compiled FastAPI AI engine, PyTorch Vision Transformer weights, SQLite PACS database, and modern Electron frontend.
+  - Uninstallation cleanly removes all program binaries via Windows *Add or Remove Programs*.
+
+### Option 2: Portable Clinical Workstation Archive (`RadiVision-AI-Workstation.zip`)
+- **Format:** Pre-packaged portable directory archive (`.zip`).
+- **Behavior:**
+  - Zero-installation needed. Clinicians can copy the folder to any USB drive, workstation PC, or share via WhatsApp / cloud drive.
+  - Double-click `RadiVision AI.exe` inside the unzipped directory to run immediately.
+
+### Building the Distribution Packages
+To rebuild both the workstation archive and setup installer from source:
+```cmd
+python build_desktop.py
+```
+*Outputs:*
+1. `RadiVision_AI_Setup.exe` (Root directory)
+2. `RadiVision-AI-Workstation.zip` (Root directory)
+
+---
+
+## 12. Security, Privacy & Regulatory Compliance
 
 - **Authentication Security:** Passwords hashed with bcrypt / PBKDF2 with salt. Brute-force rate limiting blocks repeated failed attempts.
 - **Data Protection at Rest:** Sensitive patient demographics and identifiers are encrypted using AES-256-GCM.
@@ -379,7 +425,7 @@ RadiVision AI/
 
 ---
 
-## 12. License & Medical Disclaimer
+## 13. License & Medical Disclaimer
 
 **Medical Disclaimer:** RadiVision AI is developed for diagnostic support, quality assurance, and research triage. It is intended to augment, not replace, the independent clinical judgment of board-certified radiologists and medical practitioners.
 

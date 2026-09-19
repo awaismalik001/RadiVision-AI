@@ -81,8 +81,11 @@ def build_backend():
         "app.encryption",
         "app.excel_export",
         "app.vit_model",
+        "app.preprocessing",
+        "app.domain_shift_augmentation",
         "app.gemini_service",
-        "app.detection_overlay"
+        "app.detection_overlay",
+        "cv2"
     ]
 
     cmd = [
@@ -111,6 +114,22 @@ def build_backend():
 
     exe_path = os.path.join(dist_dir, "server", "server.exe")
     if os.path.exists(exe_path):
+        # Patch torchvision native C++ extensions and DLLs (_C_stable.pyd, image_stable.pyd, dlls)
+        try:
+            import torchvision
+            tv_dir = os.path.dirname(torchvision.__file__)
+            target_tv_dir = os.path.join(dist_dir, "server", "_internal", "torchvision")
+            if os.path.exists(target_tv_dir):
+                print(f"[*] Copying torchvision binary extensions from {tv_dir} to {target_tv_dir}...")
+                for f in os.listdir(tv_dir):
+                    if f.endswith(".pyd") or f.endswith(".dll"):
+                        src = os.path.join(tv_dir, f)
+                        dst = os.path.join(target_tv_dir, f)
+                        shutil.copy2(src, dst)
+                        print(f"    + {f}")
+        except Exception as e:
+            print(f"[!] Warning: Could not patch torchvision binaries: {e}")
+
         print("=" * 60)
         print(f"[SUCCESS] Backend standalone executable compiled successfully!")
         print(f"    Binary Path: {exe_path}")
