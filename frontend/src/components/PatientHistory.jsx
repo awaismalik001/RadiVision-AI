@@ -213,8 +213,9 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                 ) : (
                   filteredScans.map((scan, idx) => {
                     const pred = scan.prediction || 'Normal';
-                    const isAbnormal = pred.toLowerCase().includes('abnormal') || pred.toLowerCase().includes('pneumonia') || pred.toLowerCase().includes('fracture');
+                    const isAbnormal = pred.toLowerCase().includes('abnormal') || pred.toLowerCase().includes('pneumonia') || (pred.toLowerCase().includes('fracture') && !pred.toLowerCase().includes('no fracture'));
                     const conf = scan.confidence ? (scan.confidence * 100).toFixed(1) : '95.0';
+                    const shortPred = pred.replace(/\s*\([^)]*\)/g, '').trim() || pred;
 
                     return (
                       <tr key={scan.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
@@ -236,15 +237,18 @@ export default function PatientHistory({ currentUser, isMyHistory = false, onNav
                         </td>
 
                         <td className="py-2.5 px-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-semibold ${
-                            isAbnormal ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          }`}>
+                          <span
+                            title={pred}
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-semibold whitespace-nowrap ${
+                              isAbnormal ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            }`}
+                          >
                             {isAbnormal ? (
-                              <AlertTriangle className="w-3 h-3 mr-1 text-rose-600" />
+                              <AlertTriangle className="w-3 h-3 mr-1 text-rose-600 shrink-0" />
                             ) : (
-                              <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+                              <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
                             )}
-                            {pred}
+                            {shortPred}
                           </span>
                         </td>
 

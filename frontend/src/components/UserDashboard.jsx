@@ -318,8 +318,10 @@ export default function UserDashboard({ currentUser, onNavigate }) {
                 ) : (
                   scans.slice(0, 5).map((scan, idx) => {
                     const pred = scan.prediction || 'Normal';
-                    const isAbnormal = pred.toLowerCase().includes('abnormal') || pred.toLowerCase().includes('pneumonia') || pred.toLowerCase().includes('fracture');
+                    const isAbnormal = pred.toLowerCase().includes('abnormal') || pred.toLowerCase().includes('pneumonia') || (pred.toLowerCase().includes('fracture') && !pred.toLowerCase().includes('no fracture'));
                     const conf = scan.confidence ? (scan.confidence * 100).toFixed(1) : '95.0';
+                    // Shorten long prediction labels (strip parenthetical sub-labels)
+                    const shortPred = pred.replace(/\s*\([^)]*\)/g, '').trim() || pred;
 
                     return (
                       <tr key={scan.scan_id || idx} className="hover:bg-slate-50/80 transition-colors">
@@ -339,17 +341,21 @@ export default function UserDashboard({ currentUser, onNavigate }) {
                           </span>
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-semibold ${
-                            isAbnormal ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
-                          }`}>
+                          <span
+                            title={pred}
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-semibold whitespace-nowrap ${
+                              isAbnormal ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
                             {isAbnormal ? (
-                              <AlertTriangle className="w-3 h-3 mr-1 text-rose-600" />
+                              <AlertTriangle className="w-3 h-3 mr-1 text-rose-600 shrink-0" />
                             ) : (
-                              <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+                              <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
                             )}
-                            {pred}
+                            {shortPred}
                           </span>
                         </td>
+
                         <td className="py-2.5 px-3 font-mono font-semibold text-[13px] text-slate-700">
                           {conf}%
                         </td>
