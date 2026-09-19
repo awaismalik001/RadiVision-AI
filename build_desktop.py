@@ -37,12 +37,15 @@ def main():
     run_cmd("npm run build", cwd=FRONTEND_DIR)
 
     # 2. Compile FastAPI AI Backend with PyInstaller
-    log("Step 2/3: Compiling FastAPI Engine & PyTorch/YOLO Models via PyInstaller...")
-    from build_backend import build_backend
-    build_backend()
+    backend_exe = os.path.join(ROOT_DIR, "dist-server", "server", "server.exe")
+    if os.environ.get("SKIP_BACKEND") == "1" and os.path.exists(backend_exe):
+        log("Step 2/3: Using existing compiled FastAPI Engine & PyTorch/YOLO standalone binary...")
+    else:
+        log("Step 2/3: Compiling FastAPI Engine & PyTorch/YOLO Models via PyInstaller...")
+        from build_backend import build_backend
+        build_backend()
 
     # Verify backend executable
-    backend_exe = os.path.join(ROOT_DIR, "dist-server", "server", "server.exe")
     if not os.path.exists(backend_exe):
         log(f"ERROR: Backend executable was not created at: {backend_exe}")
         sys.exit(1)

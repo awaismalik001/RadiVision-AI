@@ -138,7 +138,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, isStandalon
         }
       }
     } catch (err) {
-      const detail = err.response?.data?.detail || err.message || 'Authentication error.';
+      let detail = err.response?.data?.detail || err.message || 'Authentication error.';
+      if (err.message === 'Network Error' || !err.response) {
+        detail = 'AI Engine is initializing. Please wait a few seconds and try again.';
+      }
       setErrorMessage(detail);
     } finally {
       setIsLoading(false);

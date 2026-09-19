@@ -24,12 +24,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
 # Add project root to sys.path with PyInstaller freeze support
 if getattr(sys, 'frozen', False):
     PROJECT_ROOT = os.environ.get("RADIVISION_ROOT") or os.path.dirname(sys.executable)
@@ -39,6 +33,15 @@ else:
 os.environ["RADIVISION_ROOT"] = PROJECT_ROOT
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    env_path = os.path.join(PROJECT_ROOT, ".env")
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+except ImportError:
+    pass
 
 from app.model_engine import ai_engine
 from app.vit_model import vit_engine

@@ -20,34 +20,43 @@ try:
 except ImportError:
     HAS_AESGCM = False
 
-# Encryption key management
-_DEFAULT_FALLBACK_KEY = b"RadivisionAI_AES256_SecureKey32B!"  # Exactly 32 bytes for 256-bit key
+# Encryption key management - exactly 32 bytes for AES-256
+_DEFAULT_FALLBACK_KEY = b"RadivisionAI_AES256_SecureKey32B"  # Exactly 32 bytes for 256-bit key
 
 def _get_aes_key() -> bytes:
     """Retrieves 32-byte key from environment or fallback."""
-    raw_key = os.getenv("AES_SECRET_KEY", "")
+    raw_key = os.getenv("AES_SECRET_KEY", "").strip()
     if raw_key:
         try:
             # Check if base64 encoded
             decoded = base64.b64decode(raw_key.encode("utf-8"))
-            if len(decoded) == 32:
+            if len(decoded) in (16, 24, 32):
                 return decoded
         except Exception:
             pass
         # If UTF-8 string, pad or hash to 32 bytes
         encoded = raw_key.encode("utf-8")
-        if len(encoded) >= 32:
-            return encoded[:32]
-        return encoded.ljust(32, b"0")
+        if len(encoded) == 32:
+            return encoded
+        import hashlib
+        return hashlib.sha256(encoded).digest()
     return _DEFAULT_FALLBACK_KEY
 
 class AES256Cipher:
     """AES-256-GCM Authenticated Encryption for sensitive database fields."""
 
     def __init__(self, key: Optional[bytes] = None):
-        self.key = key or _get_aes_key()
+        raw = key or _get_aes_key()
+        if len(raw) not in (16, 24, 32):
+            import hashlib
+            raw = hashlib.sha256(raw).digest()
+        self.key = raw
         if HAS_AESGCM:
-            self._cipher = AESGCM(self.key)
+            try:
+                self._cipher = AESGCM(self.key)
+            except Exception as e:
+                print(f"[AES-256 Error] Failed to initialize AESGCM cipher: {e}")
+                self._cipher = None
         else:
             self._cipher = None
 

@@ -51,6 +51,7 @@
     "directories": {
       "output": "dist-electron"
     },
+    "electronDist": "node_modules/electron/dist",
     "files": [
       "dist/**/*",
       "electron/**/*",

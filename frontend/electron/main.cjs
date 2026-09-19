@@ -34,7 +34,7 @@ function checkBackendHealth(timeoutMs = 1200) {
 /**
  * Polls the backend health endpoint until it is online.
  */
-async function waitForBackend(maxAttempts = 35, intervalMs = 600) {
+async function waitForBackend(maxAttempts = 50, intervalMs = 600) {
   for (let i = 0; i < maxAttempts; i++) {
     const isUp = await checkBackendHealth();
     if (isUp) return true;
